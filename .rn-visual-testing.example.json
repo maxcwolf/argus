@@ -1,0 +1,20 @@
+{
+  "storybook": {
+    "port": 7007,
+    "storiesPattern": "src/**/__stories__/**/*.stories.?(ts|tsx|js|jsx)"
+  },
+  "simulator": {
+    "device": "iPhone 15 Pro",
+    "os": "iOS 17.0",
+    "appScheme": "your-app-scheme",
+    "bundleId": "com.example.yourapp"
+  },
+  "comparison": {
+    "mode": "threshold",
+    "threshold": 0.01,
+    "includeMetrics": true
+  },
+  "baselineDir": ".visual-baselines",
+  "screenshotDir": ".visual-screenshots",
+  "apiUrl": "https://your-visual-testing-app.com"
+}
