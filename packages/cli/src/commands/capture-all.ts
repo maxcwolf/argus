@@ -14,7 +14,7 @@ export interface CaptureAllOptions {
   scheme?: string
   delay?: number
   filter?: string
-  skipBoot?: boolean
+  startDelay?: number // Delay before starting capture
 }
 
 /**
@@ -86,21 +86,37 @@ export async function captureAllCommand(options: CaptureAllOptions = {}): Promis
 
     // Capture delay (time to wait for story to render)
     const delay = options.delay ?? 1500
+    const startDelay = options.startDelay ?? 3000
+
+    // Navigate to first story to ensure app is ready
+    const firstStory = stories[0]
+    const firstUrl = `${scheme}://?STORYBOOK_STORY_ID=${firstStory.id}`
+    spinner.start('Navigating to first story...')
+    await execa('xcrun', ['simctl', 'openurl', simulator.udid, firstUrl])
+
+    // Wait for app to be ready
+    spinner.succeed('App ready')
+    spinner.start(`Waiting ${startDelay}ms for story to render...`)
+    await new Promise((resolve) => setTimeout(resolve, startDelay))
+    spinner.succeed('Ready to capture')
 
     // Capture screenshots
     const screenshots: StoryScreenshot[] = []
     let capturedCount = 0
     let failedCount = 0
 
-    for (const story of stories) {
+    for (let i = 0; i < stories.length; i++) {
+      const story = stories[i]
       spinner.start(
         `Capturing ${story.title}/${story.storyName} (${capturedCount + 1}/${stories.length})`
       )
 
       try {
-        // Navigate to story via deep link
-        const url = `${scheme}://?STORYBOOK_STORY_ID=${story.id}`
-        await execa('xcrun', ['simctl', 'openurl', simulator.udid, url])
+        // Navigate to story via deep link (skip first one since we already launched with it)
+        if (i > 0) {
+          const url = `${scheme}://?STORYBOOK_STORY_ID=${story.id}`
+          await execa('xcrun', ['simctl', 'openurl', simulator.udid, url])
+        }
 
         // Wait for story to render
         await new Promise((resolve) => setTimeout(resolve, delay))

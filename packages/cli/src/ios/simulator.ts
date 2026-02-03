@@ -167,6 +167,19 @@ export async function launchApp(udid: string, bundleId: string): Promise<void> {
 }
 
 /**
+ * Launch app with a deep link URL
+ */
+export async function launchAppWithUrl(udid: string, url: string): Promise<void> {
+  try {
+    logger.info(`Launching app with URL: ${url}`)
+    await execa('xcrun', ['simctl', 'openurl', udid, url])
+    logger.success('App launched with URL')
+  } catch (error) {
+    throw new Error(`Failed to launch app with URL: ${error}`)
+  }
+}
+
+/**
  * Terminate app on simulator
  */
 export async function terminateApp(udid: string, bundleId: string): Promise<void> {
