@@ -18,7 +18,7 @@ export interface TestOptions {
  * Run a complete visual test cycle: capture, compare, and optionally upload
  */
 export async function testCommand(options: TestOptions = {}): Promise<void> {
-  console.log('\n🔍 Diffinitely - Visual Regression Test\n')
+  console.log('\n👁️ Argus - Visual Regression Test\n')
   console.log('='.repeat(50))
 
   const config = loadConfig()
@@ -87,7 +87,7 @@ export async function testCommand(options: TestOptions = {}): Promise<void> {
       logger.warn(`Visual test completed with changes (${duration}s)`)
       console.log('\nVisual differences were detected.')
       console.log('Review the changes and update baselines if intended:')
-      console.log('  diffinitely baseline --update')
+      console.log('  argus baseline --update')
       console.log('='.repeat(50) + '\n')
       process.exitCode = 1
     } else {

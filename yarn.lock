@@ -12,6 +12,76 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@argus/cli@workspace:packages/cli":
+  version: 0.0.0-use.local
+  resolution: "@argus/cli@workspace:packages/cli"
+  dependencies:
+    "@argus/shared": "npm:*"
+    "@types/node": "npm:^22.10.2"
+    "@types/pixelmatch": "npm:^5.2.6"
+    "@types/pngjs": "npm:^6.0.5"
+    "@types/ws": "npm:^8.5.13"
+    chalk: "npm:^5.3.0"
+    commander: "npm:^12.1.0"
+    execa: "npm:^9.5.2"
+    glob: "npm:^11.0.0"
+    ora: "npm:^8.1.1"
+    pixelmatch: "npm:^6.0.0"
+    pngjs: "npm:^7.0.0"
+    sharp: "npm:^0.33.5"
+    ssim.js: "npm:^3.5.0"
+    typescript: "npm:^5.7.2"
+    ws: "npm:^8.18.0"
+  bin:
+    argus: ./dist/cli.js
+  languageName: unknown
+  linkType: soft
+
+"@argus/shared@npm:*, @argus/shared@workspace:packages/shared":
+  version: 0.0.0-use.local
+  resolution: "@argus/shared@workspace:packages/shared"
+  dependencies:
+    typescript: "npm:^5.7.2"
+  languageName: unknown
+  linkType: soft
+
+"@argus/web@workspace:packages/web":
+  version: 0.0.0-use.local
+  resolution: "@argus/web@workspace:packages/web"
+  dependencies:
+    "@paralleldrive/cuid2": "npm:^3.3.0"
+    "@tailwindcss/vite": "npm:^4.0.6"
+    "@tanstack/devtools-vite": "npm:^0.3.11"
+    "@tanstack/react-devtools": "npm:^0.7.0"
+    "@tanstack/react-router": "npm:^1.132.0"
+    "@tanstack/react-router-devtools": "npm:^1.132.0"
+    "@tanstack/react-router-ssr-query": "npm:^1.131.7"
+    "@tanstack/react-start": "npm:^1.132.0"
+    "@tanstack/router-plugin": "npm:^1.132.0"
+    "@testing-library/dom": "npm:^10.4.0"
+    "@testing-library/react": "npm:^16.2.0"
+    "@types/node": "npm:^22.10.2"
+    "@types/react": "npm:^19.2.0"
+    "@types/react-dom": "npm:^19.2.0"
+    "@vitejs/plugin-react": "npm:^5.0.4"
+    clsx: "npm:^2.1.1"
+    drizzle-kit: "npm:^0.31.8"
+    drizzle-orm: "npm:^0.45.1"
+    jsdom: "npm:^27.0.0"
+    lucide-react: "npm:^0.561.0"
+    postgres: "npm:^3.4.8"
+    react: "npm:^19.2.0"
+    react-dom: "npm:^19.2.0"
+    tailwind-merge: "npm:^2.6.0"
+    tailwindcss: "npm:^4.0.6"
+    typescript: "npm:^5.7.2"
+    vite: "npm:^7.1.7"
+    vite-tsconfig-paths: "npm:^6.0.2"
+    vitest: "npm:^3.0.5"
+    web-vitals: "npm:^5.1.0"
+  languageName: unknown
+  linkType: soft
+
 "@asamuzakjp/css-color@npm:^4.1.1":
   version: 4.1.1
   resolution: "@asamuzakjp/css-color@npm:4.1.1"
@@ -342,80 +412,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@diffinitely/cli@workspace:packages/cli":
-  version: 0.0.0-use.local
-  resolution: "@diffinitely/cli@workspace:packages/cli"
-  dependencies:
-    "@diffinitely/shared": "npm:*"
-    "@types/node": "npm:^22.10.2"
-    "@types/pixelmatch": "npm:^5.2.6"
-    "@types/pngjs": "npm:^6.0.5"
-    "@types/ws": "npm:^8.5.13"
-    chalk: "npm:^5.3.0"
-    commander: "npm:^12.1.0"
-    execa: "npm:^9.5.2"
-    glob: "npm:^11.0.0"
-    ora: "npm:^8.1.1"
-    pixelmatch: "npm:^6.0.0"
-    pngjs: "npm:^7.0.0"
-    sharp: "npm:^0.33.5"
-    ssim.js: "npm:^3.5.0"
-    typescript: "npm:^5.7.2"
-    ws: "npm:^8.18.0"
-  bin:
-    diffinitely: ./dist/cli.js
-  languageName: unknown
-  linkType: soft
-
 "@diffinitely/monorepo@workspace:.":
   version: 0.0.0-use.local
   resolution: "@diffinitely/monorepo@workspace:."
   dependencies:
     turbo: "npm:^2.3.3"
     typescript: "npm:^5.7.2"
-  languageName: unknown
-  linkType: soft
-
-"@diffinitely/shared@npm:*, @diffinitely/shared@workspace:packages/shared":
-  version: 0.0.0-use.local
-  resolution: "@diffinitely/shared@workspace:packages/shared"
-  dependencies:
-    typescript: "npm:^5.7.2"
-  languageName: unknown
-  linkType: soft
-
-"@diffinitely/web@workspace:packages/web":
-  version: 0.0.0-use.local
-  resolution: "@diffinitely/web@workspace:packages/web"
-  dependencies:
-    "@paralleldrive/cuid2": "npm:^3.3.0"
-    "@tailwindcss/vite": "npm:^4.0.6"
-    "@tanstack/devtools-vite": "npm:^0.3.11"
-    "@tanstack/react-devtools": "npm:^0.7.0"
-    "@tanstack/react-router": "npm:^1.132.0"
-    "@tanstack/react-router-devtools": "npm:^1.132.0"
-    "@tanstack/react-router-ssr-query": "npm:^1.131.7"
-    "@tanstack/react-start": "npm:^1.132.0"
-    "@tanstack/router-plugin": "npm:^1.132.0"
-    "@testing-library/dom": "npm:^10.4.0"
-    "@testing-library/react": "npm:^16.2.0"
-    "@types/node": "npm:^22.10.2"
-    "@types/react": "npm:^19.2.0"
-    "@types/react-dom": "npm:^19.2.0"
-    "@vitejs/plugin-react": "npm:^5.0.4"
-    drizzle-kit: "npm:^0.31.8"
-    drizzle-orm: "npm:^0.45.1"
-    jsdom: "npm:^27.0.0"
-    lucide-react: "npm:^0.561.0"
-    postgres: "npm:^3.4.8"
-    react: "npm:^19.2.0"
-    react-dom: "npm:^19.2.0"
-    tailwindcss: "npm:^4.0.6"
-    typescript: "npm:^5.7.2"
-    vite: "npm:^7.1.7"
-    vite-tsconfig-paths: "npm:^6.0.2"
-    vitest: "npm:^3.0.5"
-    web-vitals: "npm:^5.1.0"
   languageName: unknown
   linkType: soft
 
@@ -5227,6 +5229,13 @@ __metadata:
   version: 3.2.4
   resolution: "symbol-tree@npm:3.2.4"
   checksum: 10c0/dfbe201ae09ac6053d163578778c53aa860a784147ecf95705de0cd23f42c851e1be7889241495e95c37cabb058edb1052f141387bef68f705afc8f9dd358509
+  languageName: node
+  linkType: hard
+
+"tailwind-merge@npm:^2.6.0":
+  version: 2.6.1
+  resolution: "tailwind-merge@npm:2.6.1"
+  checksum: 10c0/f9b5d7ba37f6c6dc7bb7a090f08252e8d827b5abfc1031bf468c5274ce104409e7952a0075a3e009aab53adda8c6d133bc1dd9d3427e2ae5bc00306f9ce1fbff
   languageName: node
   linkType: hard
 

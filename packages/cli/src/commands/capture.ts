@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, dirname } from 'path'
 import ora from 'ora'
-import { VisualTestConfig, StoryScreenshot } from '@diffinitely/shared'
+import { VisualTestConfig, StoryScreenshot } from '@argus/shared'
 import { loadConfig, validateConfig } from '../utils/config'
 import { getCurrentBranch, getCurrentCommitHash } from '../utils/git'
 import { logger } from '../utils/logger'
@@ -127,6 +127,7 @@ export async function captureCommand(options: CaptureOptions = {}): Promise<void
             // Record screenshot
             screenshots.push({
               storyId,
+              kind: story.kind || story.title,
               componentName: story.componentName,
               storyName: story.storyName,
               filePath,

@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import ora from 'ora'
 import { execa } from 'execa'
-import { StoryScreenshot } from '@diffinitely/shared'
+import { StoryScreenshot } from '@argus/shared'
 import { loadConfig, validateConfig } from '../utils/config'
 import { getCurrentBranch, getCurrentCommitHash } from '../utils/git'
 import { logger } from '../utils/logger'
@@ -134,6 +134,7 @@ export async function captureAllCommand(options: CaptureAllOptions = {}): Promis
         // Record screenshot
         screenshots.push({
           storyId: story.id,
+          kind: story.kind || story.title, // Full path like "UI/Button"
           componentName: story.componentName,
           storyName: story.storyName,
           filePath,

@@ -15,8 +15,8 @@ import { testCommand } from './commands/test'
 const program = new Command()
 
 program
-  .name('diffinitely')
-  .description('Diffinitely - React Native Storybook Visual Diff Testing')
+  .name('argus')
+  .description('Argus - Visual Regression Testing for React Native')
   .version('0.1.0')
 
 // Main commands (most commonly used)

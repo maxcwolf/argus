@@ -1,5 +1,5 @@
 import { execaCommand, execa } from 'execa'
-import { SimulatorConfig, SIMULATOR_WAIT_TIMEOUT } from '@diffinitely/shared'
+import { SimulatorConfig, SIMULATOR_WAIT_TIMEOUT } from '@argus/shared'
 import { logger } from '../utils/logger'
 
 export interface SimulatorDevice {

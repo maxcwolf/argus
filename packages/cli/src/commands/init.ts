@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import ora from 'ora'
 import { execSync } from 'child_process'
-import { CONFIG_FILE_NAME } from '@diffinitely/shared'
+import { CONFIG_FILE_NAME } from '@argus/shared'
 import { logger } from '../utils/logger'
 
 interface InitOptions {
@@ -22,7 +22,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     return
   }
 
-  console.log('\n🔍 Diffinitely - React Native Storybook Visual Diff Testing\n')
+  console.log('\n👁️ Argus - Visual Regression Testing for React Native\n')
   console.log('Setting up visual testing for your project...\n')
 
   const spinner = ora('Detecting project configuration...').start()
@@ -142,7 +142,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     }
 
     if (additions.length > 0) {
-      await writeFile(gitignorePath, gitignore + '\n# Diffinitely\n' + additions.join('\n') + '\n')
+      await writeFile(gitignorePath, gitignore + '\n# Argus\n' + additions.join('\n') + '\n')
       spinner.succeed('Updated .gitignore')
     }
   }
@@ -154,16 +154,16 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
 
     console.log('\n📝 Add these scripts to your package.json:\n')
     console.log('  "scripts": {')
-    console.log('    "visual:test": "diffinitely test",')
-    console.log('    "visual:capture": "diffinitely capture-all",')
-    console.log('    "visual:compare": "diffinitely compare",')
-    console.log('    "visual:baseline": "diffinitely baseline --update"')
+    console.log('    "visual:test": "argus test",')
+    console.log('    "visual:capture": "argus capture-all",')
+    console.log('    "visual:compare": "argus compare",')
+    console.log('    "visual:baseline": "argus baseline --update"')
     console.log('  }')
   }
 
   // Summary
   console.log('\n' + '='.repeat(50))
-  console.log('\n✅ Diffinitely initialized!\n')
+  console.log('\n✅ Argus initialized!\n')
   console.log('Configuration saved to:', CONFIG_FILE_NAME)
   console.log('\nDetected settings:')
   console.log(`  • Simulator: ${deviceName} (${osVersion})`)
@@ -172,8 +172,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   console.log(`  • Stories: ${storiesPattern}`)
   console.log('\nNext steps:')
   console.log('  1. Review and edit', CONFIG_FILE_NAME)
-  console.log('  2. Run: diffinitely capture-all')
-  console.log('  3. Run: diffinitely baseline --update')
-  console.log('  4. Make UI changes and run: diffinitely test')
+  console.log('  2. Run: argus capture-all')
+  console.log('  3. Run: argus baseline --update')
+  console.log('  4. Make UI changes and run: argus test')
   console.log('\n' + '='.repeat(50) + '\n')
 }

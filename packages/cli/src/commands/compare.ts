@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import ora from 'ora'
-import { ComparisonResult, ComparisonConfig } from '@diffinitely/shared'
+import { ComparisonResult, ComparisonConfig } from '@argus/shared'
 import { loadConfig, validateConfig } from '../utils/config'
 import { getCurrentBranch } from '../utils/git'
 import { logger } from '../utils/logger'
@@ -138,6 +138,7 @@ export async function compareCommand(options: CompareOptions = {}): Promise<void
 
         results.push({
           storyId: filename.replace('.png', ''),
+          kind: storyMetadata?.kind || '',
           componentName: storyMetadata?.componentName || '',
           storyName: storyMetadata?.storyName || '',
           baselineUrl: baselinePath,

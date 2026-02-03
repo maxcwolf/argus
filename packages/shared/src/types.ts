@@ -12,6 +12,7 @@ export interface Story {
 
 export interface StoryScreenshot {
   storyId: string
+  kind: string // Full path like "UI/Button"
   componentName: string
   storyName: string
   filePath: string
@@ -24,6 +25,7 @@ export interface StoryScreenshot {
 
 export interface ComparisonResult {
   storyId: string
+  kind?: string // Full path like "UI/Button"
   componentName: string
   storyName: string
   baselineUrl: string

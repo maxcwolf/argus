@@ -1,4 +1,4 @@
-# Deploying Diffinitely Web Dashboard
+# Deploying Argus Web Dashboard
 
 ## Docker Deployment (Recommended)
 
@@ -65,19 +65,19 @@ volumes:
 For HTTPS and domain setup:
 
 ```nginx
-# /etc/nginx/sites-available/diffinitely
+# /etc/nginx/sites-available/argus
 server {
     listen 80;
-    server_name diffinitely.yourcompany.com;
+    server_name argus.yourcompany.com;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name diffinitely.yourcompany.com;
+    server_name argus.yourcompany.com;
 
-    ssl_certificate /etc/letsencrypt/live/diffinitely.yourcompany.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/diffinitely.yourcompany.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/argus.yourcompany.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/argus.yourcompany.com/privkey.pem;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -117,11 +117,11 @@ docker compose -f docker-compose.prod.yml up -d
 ```bash
 # Backup
 docker compose -f docker-compose.prod.yml exec db \
-  pg_dump -U diffinitely diffinitely > backup.sql
+  pg_dump -U argus argus > backup.sql
 
 # Restore
 docker compose -f docker-compose.prod.yml exec -T db \
-  psql -U diffinitely diffinitely < backup.sql
+  psql -U argus argus < backup.sql
 ```
 
 ---
@@ -132,7 +132,7 @@ docker compose -f docker-compose.prod.yml exec -T db \
 |----------|---------|-------------|
 | `PORT` | `3000` | Port for the web server |
 | `DATABASE_URL` | (auto) | PostgreSQL connection string |
-| `DB_PASSWORD` | `diffinitely` | Database password |
+| `DB_PASSWORD` | `argus` | Database password |
 | `SCREENSHOTS_PATH` | `./screenshots` | Path to mount for image serving |
 | `NODE_ENV` | `production` | Node environment |
 

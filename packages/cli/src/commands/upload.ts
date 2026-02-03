@@ -22,6 +22,7 @@ interface ComparisonResults {
   failedCount: number
   results: Array<{
     storyId: string
+    kind?: string
     componentName: string
     storyName: string
     baselineUrl: string
@@ -83,6 +84,7 @@ export async function uploadCommand(options: UploadOptions = {}): Promise<void> 
       commitMessage,
       stories: results.results.map((r) => ({
         storyId: r.storyId,
+        kind: r.kind || extractKindFromStoryId(r.storyId), // Full path like "UI/Button"
         componentName: r.componentName || extractComponentName(r.storyId),
         storyName: r.storyName || extractStoryName(r.storyId),
         baselineUrl: r.baselineUrl || undefined,
@@ -154,4 +156,29 @@ function extractStoryName(storyId: string): string {
       .join(' ')
   }
   return 'Default'
+}
+
+/**
+ * Extract kind (full path) from story ID
+ * e.g., "ui-button--primary" -> "ui/Button"
+ * This is a best-effort reconstruction for legacy data without kind field
+ */
+function extractKindFromStoryId(storyId: string): string {
+  const parts = storyId.split('--')
+  if (parts.length > 0) {
+    // Split by hyphen and try to reconstruct path
+    // Assume first segment(s) are directory, last is component
+    const titleParts = parts[0].split('-')
+    if (titleParts.length >= 2) {
+      // Try to identify directory vs component (heuristic: directories are usually short)
+      // e.g., "ui-button" -> ["ui", "button"] -> "ui/Button"
+      const dir = titleParts.slice(0, -1).join('/')
+      const comp = titleParts[titleParts.length - 1]
+        .charAt(0).toUpperCase() + titleParts[titleParts.length - 1].slice(1)
+      return `${dir}/${comp}`
+    }
+    // Single part - just capitalize
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1)
+  }
+  return storyId
 }

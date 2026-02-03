@@ -1,14 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import {
-  GitBranch,
-  CheckCircle,
-  XCircle,
-  Clock,
-  ChevronRight,
-} from 'lucide-react'
+import { GitBranch, ChevronRight } from 'lucide-react'
 import { sql, desc } from 'drizzle-orm'
 import { getDb, tests } from '../../db'
+import { formatRelativeTime } from '../../lib/utils'
+import { StatusIcon } from '../../components/ui/StatusBadge'
 
 const getBranches = createServerFn({ method: 'GET' }).handler(async () => {
   const db = getDb()
@@ -55,72 +51,45 @@ export const Route = createFileRoute('/branches/')({
   loader: () => getBranches(),
 })
 
-function StatusIcon({ status }: { status: string }) {
-  switch (status) {
-    case 'APPROVED':
-      return <CheckCircle className="w-5 h-5 text-green-500" />
-    case 'REJECTED':
-      return <XCircle className="w-5 h-5 text-red-500" />
-    case 'PENDING':
-      return <Clock className="w-5 h-5 text-yellow-500" />
-    default:
-      return <Clock className="w-5 h-5 text-gray-400" />
-  }
-}
-
-function formatRelativeTime(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (days > 0) return `${days}d ago`
-  if (hours > 0) return `${hours}h ago`
-  if (minutes > 0) return `${minutes}m ago`
-  return 'just now'
-}
-
 function BranchesIndex() {
   const branches = Route.useLoaderData()
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Branches</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Branches</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           View visual testing status by branch
         </p>
       </div>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <ul className="divide-y divide-gray-200">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {branches.map((branch) => (
             <li key={branch.name}>
               <Link
                 to="/branches/$name"
                 params={{ name: encodeURIComponent(branch.name) }}
-                className="block hover:bg-gray-50"
+                className="block hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <GitBranch className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
+                <div className="px-4 sm:px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                    <GitBranch className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {branch.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         {branch.testCount} test
                         {branch.testCount !== 1 ? 's' : ''} &middot; Last run{' '}
-                        {formatRelativeTime(branch.lastTest.createdAt)}
+                        {formatRelativeTime(branch.lastTest!.createdAt)}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <StatusIcon status={branch.lastTest.status} />
-                    <span className="text-sm text-gray-500 font-mono">
-                      {branch.lastTest.commitHash}
+                  <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2">
+                    <StatusIcon status={branch.lastTest!.status} />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-mono hidden sm:inline">
+                      {branch.lastTest!.commitHash}
                     </span>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </div>

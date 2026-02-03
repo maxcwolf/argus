@@ -1,0 +1,8 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Peacock feather eye - teardrop shape with concentric rings -->
+  <ellipse cx="32" cy="36" rx="20" ry="24" stroke="#0d9488" stroke-width="2" fill="none"/>
+  <ellipse cx="32" cy="32" rx="14" ry="16" stroke="#14b8a6" stroke-width="2" fill="none"/>
+  <ellipse cx="32" cy="30" rx="8" ry="9" fill="#0d9488"/>
+  <circle cx="32" cy="29" r="4" fill="#1e1b4b"/>
+  <circle cx="33.5" cy="27.5" r="1.5" fill="white"/>
+</svg>

@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { CheckCircle, XCircle, Clock, GitBranch, Hash } from 'lucide-react'
+import { GitBranch, Hash } from 'lucide-react'
 import { desc } from 'drizzle-orm'
 import { getDb, tests } from '../db'
+import { formatRelativeTime } from '../lib/utils'
+import { StatusBadge } from '../components/ui/StatusBadge'
 
 // Server function to get recent tests
 const getRecentTests = createServerFn({ method: 'GET' }).handler(async () => {
@@ -24,45 +26,6 @@ export const Route = createFileRoute('/')({
   loader: () => getRecentTests(),
 })
 
-function StatusBadge({ status }: { status: string }) {
-  const styles = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    APPROVED: 'bg-green-100 text-green-800',
-    REJECTED: 'bg-red-100 text-red-800',
-    PARTIAL: 'bg-blue-100 text-blue-800',
-  }
-
-  const icons = {
-    PENDING: <Clock className="w-4 h-4" />,
-    APPROVED: <CheckCircle className="w-4 h-4" />,
-    REJECTED: <XCircle className="w-4 h-4" />,
-    PARTIAL: <Clock className="w-4 h-4" />,
-  }
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status as keyof typeof styles] || styles.PENDING}`}
-    >
-      {icons[status as keyof typeof icons]}
-      {status}
-    </span>
-  )
-}
-
-function formatRelativeTime(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (days > 0) return `${days}d ago`
-  if (hours > 0) return `${hours}h ago`
-  if (minutes > 0) return `${minutes}m ago`
-  return 'just now'
-}
-
 function Dashboard() {
   const tests = Route.useLoaderData()
 
@@ -83,30 +46,30 @@ function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
           <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tests</div>
-          <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             {stats.total}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <div className="text-sm font-medium text-warning-600 dark:text-warning-400">
             Pending Review
           </div>
-          <div className="mt-2 text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold text-warning-600 dark:text-warning-400">
             {stats.pending}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-green-600 dark:text-green-400">Approved</div>
-          <div className="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <div className="text-sm font-medium text-success-600 dark:text-success-400">Approved</div>
+          <div className="mt-2 text-2xl sm:text-3xl font-bold text-success-600 dark:text-success-400">
             {stats.approved}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-red-600 dark:text-red-400">Rejected</div>
-          <div className="mt-2 text-3xl font-bold text-red-600 dark:text-red-400">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+          <div className="text-sm font-medium text-error-600 dark:text-error-400">Rejected</div>
+          <div className="mt-2 text-2xl sm:text-3xl font-bold text-error-600 dark:text-error-400">
             {stats.rejected}
           </div>
         </div>
@@ -114,7 +77,7 @@ function Dashboard() {
 
       {/* Recent Tests Table */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Tests</h2>
         </div>
         {tests.length === 0 ? (
@@ -125,89 +88,89 @@ function Dashboard() {
             </p>
           </div>
         ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Branch
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Commit
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Changes
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {tests.map((test) => (
-                <tr key={test.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <GitBranch className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {test.branch}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      vs {test.baseBranch}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-mono text-gray-600 dark:text-gray-300">
-                        {test.commitHash}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs truncate">
-                      {test.commitMessage}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={test.status} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex items-center gap-4">
-                      <span className="text-yellow-600 dark:text-yellow-400">
-                        {test.changedCount} changed
-                      </span>
-                      <span className="text-green-600 dark:text-green-400">
-                        {test.passedCount} passed
-                      </span>
-                      {test.failedCount > 0 && (
-                        <span className="text-red-600 dark:text-red-400">
-                          {test.failedCount} failed
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatRelativeTime(test.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a
-                      href={`/tests/${test.id}`}
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
-                    >
-                      View Details
-                    </a>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Branch
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
+                    Commit
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                    Changes
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">
+                    Created
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {tests.map((test) => (
+                  <tr key={test.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <GitBranch className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none">
+                          {test.branch}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        vs {test.baseBranch}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-mono text-gray-600 dark:text-gray-300">
+                          {test.commitHash}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs truncate">
+                        {test.commitMessage}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <StatusBadge status={test.status} />
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm hidden md:table-cell">
+                      <div className="flex items-center gap-4">
+                        <span className="text-warning-600 dark:text-warning-400">
+                          {test.changedCount} changed
+                        </span>
+                        <span className="text-success-600 dark:text-success-400">
+                          {test.passedCount} passed
+                        </span>
+                        {test.failedCount > 0 && (
+                          <span className="text-error-600 dark:text-error-400">
+                            {test.failedCount} failed
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
+                      {formatRelativeTime(test.createdAt)}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <a
+                        href={`/tests/${test.id}`}
+                        className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300"
+                      >
+                        View
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

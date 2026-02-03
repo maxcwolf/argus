@@ -70,6 +70,7 @@ export const storyResults = pgTable(
       .notNull()
       .references(() => tests.id, { onDelete: 'cascade' }),
     storyId: text('story_id').notNull(), // "ComponentName-StoryName"
+    kind: text('kind'), // Full path like "UI/Button" for grouping
     componentName: text('component_name').notNull(),
     storyName: text('story_name').notNull(),
     baselineUrl: text('baseline_url'),

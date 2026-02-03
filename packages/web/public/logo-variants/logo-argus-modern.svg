@@ -1,0 +1,11 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern geometric eye - represents visual diff detection -->
+  <!-- Outer eye shape -->
+  <path d="M32 12C18 12 8 32 8 32C8 32 18 52 32 52C46 52 56 32 56 32C56 32 46 12 32 12Z" stroke="#6366f1" stroke-width="3" fill="none" stroke-linejoin="round"/>
+  <!-- Iris -->
+  <circle cx="32" cy="32" r="12" fill="#6366f1"/>
+  <!-- Pupil -->
+  <circle cx="32" cy="32" r="6" fill="#1e1b4b"/>
+  <!-- Highlight -->
+  <circle cx="35" cy="29" r="2.5" fill="white"/>
+</svg>

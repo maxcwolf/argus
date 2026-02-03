@@ -30,7 +30,7 @@ WORKDIR /app
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 diffinitely
+RUN adduser --system --uid 1001 argus
 
 # Copy built assets
 COPY --from=builder /app/packages/web/dist ./dist
@@ -38,9 +38,9 @@ COPY --from=builder /app/packages/web/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Set ownership
-RUN chown -R diffinitely:nodejs /app
+RUN chown -R argus:nodejs /app
 
-USER diffinitely
+USER argus
 
 EXPOSE 3000
 

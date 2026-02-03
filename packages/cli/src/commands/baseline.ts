@@ -46,7 +46,7 @@ export async function baselineCommand(options: BaselineOptions = {}): Promise<vo
       if (!existsSync(screenshotDir)) {
         throw new Error(
           `Screenshot directory not found: ${screenshotDir}\n` +
-          `Run 'diffinitely capture-all' first to capture screenshots.`
+          `Run 'argus capture-all' first to capture screenshots.`
         )
       }
 
@@ -95,8 +95,8 @@ export async function baselineCommand(options: BaselineOptions = {}): Promise<vo
     if (!existsSync(baselineDir)) {
       console.log('No baselines found.\n')
       console.log('To create baselines from current screenshots:')
-      console.log('  1. Run: diffinitely capture-all')
-      console.log('  2. Run: diffinitely baseline --update\n')
+      console.log('  1. Run: argus capture-all')
+      console.log('  2. Run: argus baseline --update\n')
       return
     }
 
@@ -122,8 +122,8 @@ export async function baselineCommand(options: BaselineOptions = {}): Promise<vo
     }
 
     console.log('\nCommands:')
-    console.log('  diffinitely baseline --update   Update baselines from screenshots')
-    console.log('  diffinitely baseline --clear    Remove all baselines\n')
+    console.log('  argus baseline --update   Update baselines from screenshots')
+    console.log('  argus baseline --clear    Remove all baselines\n')
   } catch (error) {
     spinner.fail('Baseline operation failed')
     throw error

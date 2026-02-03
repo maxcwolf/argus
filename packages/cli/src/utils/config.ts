@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { VisualTestConfig, DEFAULT_CONFIG, CONFIG_FILE_NAME } from '@diffinitely/shared'
+import { VisualTestConfig, DEFAULT_CONFIG, CONFIG_FILE_NAME } from '@argus/shared'
 
 /**
  * Load configuration from project root

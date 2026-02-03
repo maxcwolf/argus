@@ -8,7 +8,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     environment:
-      - DATABASE_URL=postgresql://diffinitely:${DB_PASSWORD:-diffinitely}@db:5432/diffinitely
+      - DATABASE_URL=postgresql://argus:${DB_PASSWORD:-argus}@db:5432/argus
       - NODE_ENV=production
     depends_on:
       db:
@@ -22,13 +22,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: diffinitely
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-diffinitely}
-      POSTGRES_DB: diffinitely
+      POSTGRES_USER: argus
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-argus}
+      POSTGRES_DB: argus
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U diffinitely"]
+      test: ["CMD-SHELL", "pg_isready -U argus"]
       interval: 5s
       timeout: 5s
       retries: 5

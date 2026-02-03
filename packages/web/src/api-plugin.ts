@@ -131,6 +131,7 @@ export function apiPlugin(): Plugin {
                   stories.map((story: any) => ({
                     testId: test.id,
                     storyId: story.storyId,
+                    kind: story.kind || story.title || null, // Full path like "UI/Button"
                     componentName: story.componentName,
                     storyName: story.storyName,
                     baselineUrl: story.baselineUrl || null,

@@ -1,11 +1,11 @@
 {
-  "name": "@diffinitely/cli",
+  "name": "@argus/cli",
   "version": "0.1.0",
-  "description": "Diffinitely CLI - React Native Storybook Visual Diff Testing",
+  "description": "Argus CLI - Visual Regression Testing for React Native",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "diffinitely": "./dist/cli.js"
+    "argus": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -13,7 +13,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@diffinitely/shared": "*",
+    "@argus/shared": "*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "execa": "^9.5.2",
