@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build packages
+        run: yarn build
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update package versions
+        run: |
+          # Update version in all package.json files
+          VERSION=${{ steps.version.outputs.VERSION }}
+          for pkg in packages/*/package.json; do
+            jq ".version = \"$VERSION\"" "$pkg" > tmp.json && mv tmp.json "$pkg"
+          done
+          jq ".version = \"$VERSION\"" package.json > tmp.json && mv tmp.json package.json
+
+      - name: Publish shared package to npm
+        run: |
+          cd packages/shared
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
+
+      - name: Publish CLI to npm
+        run: |
+          cd packages/cli
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
+
+      - name: Package CLI for GitHub release
+        run: |
+          mkdir -p release/diffinitely-cli
+
+          # Copy CLI files
+          cp -r packages/cli/dist release/diffinitely-cli/
+          cp packages/cli/package.json release/diffinitely-cli/
+
+          # Copy shared dependency
+          mkdir -p release/diffinitely-cli/node_modules/@diffinitely
+          cp -r packages/shared release/diffinitely-cli/node_modules/@diffinitely/
+
+          # Create install script
+          cat > release/diffinitely-cli/install.sh << 'INSTALL_EOF'
+          #!/bin/bash
+          set -e
+
+          INSTALL_DIR="${HOME}/.diffinitely"
+          BIN_DIR="${HOME}/.local/bin"
+
+          echo "Installing Diffinitely CLI..."
+
+          # Create directories
+          mkdir -p "$INSTALL_DIR"
+          mkdir -p "$BIN_DIR"
+
+          # Copy files
+          cp -r . "$INSTALL_DIR/"
+
+          # Install production dependencies
+          cd "$INSTALL_DIR"
+          npm install --production --ignore-scripts 2>/dev/null || true
+
+          # Create executable wrapper
+          cat > "$BIN_DIR/diffinitely" << 'EOF'
+          #!/bin/bash
+          node "$HOME/.diffinitely/dist/cli.js" "$@"
+          EOF
+          chmod +x "$BIN_DIR/diffinitely"
+
+          echo ""
+          echo "✅ Diffinitely CLI installed!"
+          echo ""
+          echo "Make sure $BIN_DIR is in your PATH:"
+          echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+          echo ""
+          echo "Then run: diffinitely --help"
+          INSTALL_EOF
+          chmod +x release/diffinitely-cli/install.sh
+
+          # Create tarball
+          cd release
+          tar -czf diffinitely-cli-${{ steps.version.outputs.VERSION }}.tar.gz diffinitely-cli
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/diffinitely-cli-${{ steps.version.outputs.VERSION }}.tar.gz
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            ```bash
+            # Add to your React Native project
+            npm install -D @diffinitely/cli
+            # or
+            yarn add -D @diffinitely/cli
+            ```
+
+            ## Quick Start
+
+            ```bash
+            npx diffinitely init    # Set up configuration
+            npx diffinitely test    # Run visual tests
+            ```
+
+            Or add npm scripts:
+            ```json
+            {
+              "scripts": {
+                "visual:test": "diffinitely test",
+                "visual:baseline": "diffinitely baseline --update"
+              }
+            }
+            ```

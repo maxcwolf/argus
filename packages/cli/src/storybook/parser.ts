@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import { glob } from 'glob'
 import { join } from 'path'
-import { Story } from '@rn-visual-testing/shared'
+import { Story } from '@diffinitely/shared'
 import { logger } from '../utils/logger'
 
 /**

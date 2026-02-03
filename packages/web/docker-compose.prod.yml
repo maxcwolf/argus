@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: packages/web/Dockerfile
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - DATABASE_URL=postgresql://diffinitely:${DB_PASSWORD:-diffinitely}@db:5432/diffinitely
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Mount the screenshots directory so the web app can serve images
+      # Adjust this path to where your screenshots are stored
+      - ${SCREENSHOTS_PATH:-./screenshots}:/screenshots:ro
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: diffinitely
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-diffinitely}
+      POSTGRES_DB: diffinitely
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U diffinitely"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -20,7 +20,7 @@ export const DEFAULT_CONFIG = {
   screenshotDir: '.visual-screenshots',
 }
 
-export const CONFIG_FILE_NAME = '.rn-visual-testing.json'
+export const CONFIG_FILE_NAME = '.diffinitely.json'
 
 export const SIMULATOR_WAIT_TIMEOUT = 30000 // 30 seconds
 export const STORY_RENDER_TIMEOUT = 5000 // 5 seconds

@@ -1,11 +1,11 @@
 {
-  "name": "@rn-visual-testing/cli",
+  "name": "@diffinitely/cli",
   "version": "0.1.0",
-  "description": "CLI tool for visual regression testing in React Native",
+  "description": "Diffinitely CLI - React Native Storybook Visual Diff Testing",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "rn-visual-test": "./dist/cli.js"
+    "diffinitely": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -13,7 +13,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@rn-visual-testing/shared": "*",
+    "@diffinitely/shared": "*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "execa": "^9.5.2",

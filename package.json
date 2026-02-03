@@ -1,8 +1,8 @@
 {
-  "name": "@rn-visual-testing/monorepo",
+  "name": "@diffinitely/monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Visual regression testing tool for React Native Storybook",
+  "description": "Diffinitely - React Native Storybook Visual Diff Testing",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",

@@ -7,24 +7,87 @@ import { compareCommand } from './commands/compare'
 import { screenshotCommand } from './commands/screenshot'
 import { listStoriesCommand } from './commands/list-stories'
 import { captureAllCommand } from './commands/capture-all'
+import { uploadCommand } from './commands/upload'
+import { initCommand } from './commands/init'
+import { baselineCommand } from './commands/baseline'
+import { testCommand } from './commands/test'
 
 const program = new Command()
 
 program
-  .name('rn-visual-test')
-  .description('Visual regression testing for React Native Storybook')
+  .name('diffinitely')
+  .description('Diffinitely - React Native Storybook Visual Diff Testing')
   .version('0.1.0')
 
+// Main commands (most commonly used)
+
 program
-  .command('capture')
-  .description('Capture screenshots of all Storybook stories')
+  .command('test')
+  .description('Run complete visual test: capture, compare, and upload')
   .option('-b, --branch <branch>', 'Override current git branch')
-  .option('-d, --device <device>', 'Override simulator device')
-  .option('--skip-boot', 'Skip booting the simulator')
-  .option('--skip-shutdown', 'Skip shutting down the simulator')
+  .option('--base <branch>', 'Base branch for comparison (default: main)')
+  .option('--skip-capture', 'Skip screenshot capture (use existing)')
+  .option('--skip-upload', 'Skip uploading results')
+  .option('-t, --threshold <threshold>', 'Difference threshold (0-1)', parseFloat)
   .action(async (options) => {
     try {
-      await captureCommand(options)
+      await testCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+program
+  .command('init')
+  .description('Initialize visual testing in current project')
+  .option('-f, --force', 'Overwrite existing configuration')
+  .action(async (options) => {
+    try {
+      await initCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+program
+  .command('baseline')
+  .description('Manage visual baselines')
+  .option('--update', 'Update baselines from current screenshots')
+  .option('--clear', 'Clear all baselines')
+  .option('-b, --branch <branch>', 'Branch to use for screenshots (default: current)')
+  .action(async (options) => {
+    try {
+      await baselineCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+// Individual step commands
+
+program
+  .command('capture-all')
+  .description('Capture screenshots of all stories')
+  .option('-b, --branch <branch>', 'Override current git branch')
+  .option('-s, --scheme <scheme>', 'URL scheme for deep linking')
+  .option('-d, --delay <ms>', 'Delay between captures in ms (default: 1500)', parseInt)
+  .option('-f, --filter <pattern>', 'Filter stories by regex pattern')
+  .option('--skip-shutdown', 'Keep simulator running after capture')
+  .action(async (options) => {
+    try {
+      await captureAllCommand(options)
     } catch (error: any) {
       console.error(chalk.red('\n✖ Error:'), error.message)
       if (process.env.DEBUG) {
@@ -54,8 +117,46 @@ program
   })
 
 program
+  .command('upload')
+  .description('Upload comparison results to the web dashboard')
+  .option('-b, --branch <branch>', 'Override current git branch')
+  .option('-u, --api-url <url>', 'Override API URL from config')
+  .action(async (options) => {
+    try {
+      await uploadCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+// Utility commands
+
+program
+  .command('capture')
+  .description('Capture screenshots (legacy, use capture-all instead)')
+  .option('-b, --branch <branch>', 'Override current git branch')
+  .option('-d, --device <device>', 'Override simulator device')
+  .option('--skip-boot', 'Skip booting the simulator')
+  .option('--skip-shutdown', 'Skip shutting down the simulator')
+  .action(async (options) => {
+    try {
+      await captureCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+program
   .command('screenshot')
-  .description('Capture a single screenshot of the current simulator screen')
+  .description('Capture a single screenshot')
   .option('-n, --name <name>', 'Name for the screenshot')
   .option('-b, --branch <branch>', 'Override current git branch')
   .action(async (options) => {
@@ -82,70 +183,6 @@ program
       if (process.env.DEBUG) {
         console.error(error.stack)
       }
-      process.exit(1)
-    }
-  })
-
-program
-  .command('capture-all')
-  .description('Capture screenshots of all stories using deep linking')
-  .option('-b, --branch <branch>', 'Override current git branch')
-  .option('-s, --scheme <scheme>', 'URL scheme for deep linking (default: from config)')
-  .option('-d, --delay <ms>', 'Delay between captures in ms (default: 1500)', parseInt)
-  .option('-f, --filter <pattern>', 'Filter stories by regex pattern')
-  .action(async (options) => {
-    try {
-      await captureAllCommand(options)
-    } catch (error: any) {
-      console.error(chalk.red('\n✖ Error:'), error.message)
-      if (process.env.DEBUG) {
-        console.error(error.stack)
-      }
-      process.exit(1)
-    }
-  })
-
-program
-  .command('init')
-  .description('Initialize visual testing in current project')
-  .action(async () => {
-    const { writeFile, mkdir } = await import('fs/promises')
-    const { join } = await import('path')
-
-    try {
-      // Create config file
-      const config = {
-        storybook: {
-          port: 7007,
-          storiesPattern: 'src/**/__stories__/**/*.stories.?(ts|tsx|js|jsx)',
-        },
-        simulator: {
-          device: 'iPhone 15 Pro',
-          os: 'iOS 17.0',
-          appScheme: 'your-app-scheme',
-        },
-        comparison: {
-          mode: 'threshold',
-          threshold: 0.01,
-          includeMetrics: true,
-        },
-        baselineDir: '.visual-baselines',
-        screenshotDir: '.visual-screenshots',
-      }
-
-      await writeFile(join(process.cwd(), '.rn-visual-testing.json'), JSON.stringify(config, null, 2))
-
-      // Create baseline directory
-      await mkdir(join(process.cwd(), '.visual-baselines', 'ios'), { recursive: true })
-
-      console.log(chalk.green('✓ Visual testing initialized!'))
-      console.log('\nNext steps:')
-      console.log('  1. Update .rn-visual-testing.json with your app settings')
-      console.log('  2. Run: rn-visual-test capture')
-      console.log('  3. Copy screenshots to baselines: cp -r .visual-screenshots/<branch>/* .visual-baselines/ios/')
-      console.log('  4. Make UI changes and run: rn-visual-test compare')
-    } catch (error: any) {
-      console.error(chalk.red('✖ Initialization failed:'), error.message)
       process.exit(1)
     }
   })

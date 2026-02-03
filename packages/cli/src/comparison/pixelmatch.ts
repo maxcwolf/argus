@@ -38,9 +38,14 @@ export async function compareWithPixelmatch(
     const diff = new PNG({ width, height })
 
     // Compare images
+    // diffColor: red for changed pixels
+    // alpha: 0 makes unchanged pixels fully transparent (great for overlays)
     const mismatchedPixels = pixelmatch(baseline.data, current.data, diff.data, width, height, {
       threshold,
       includeAA: false,
+      alpha: 0,
+      diffColor: [255, 0, 0],
+      diffColorAlt: [255, 0, 255],
     })
 
     const diffPercentage = (mismatchedPixels / totalPixels) * 100

@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { Story, STORYBOOK_CONNECTION_TIMEOUT, STORY_RENDER_TIMEOUT } from '@rn-visual-testing/shared'
+import { Story, STORYBOOK_CONNECTION_TIMEOUT, STORY_RENDER_TIMEOUT } from '@diffinitely/shared'
 import { logger } from '../utils/logger'
 
 export interface StorybookClient {

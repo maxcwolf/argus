@@ -1,284 +1,250 @@
-# React Native Visual Testing
+# Diffinitely
 
-A Chromatic-like visual regression testing tool for React Native Storybook on iOS simulators.
+**React Native Storybook Visual Diff Testing**
+
+A Chromatic-like visual regression testing tool for React Native Storybook on iOS simulators. Capture screenshots, compare visual differences, and review changes in a web dashboard.
 
 ## Features
 
-- 📸 Automated screenshot capture from iOS Simulators
-- 🔍 Fast image comparison using ODiff or Pixelmatch
-- 📊 SSIM-based similarity scoring
-- 🌐 Web dashboard for reviewing changes (coming soon)
-- 🔄 Git-based baseline management
-- ⚡ CI/CD integration ready
+- **Automated Screenshot Capture** - Captures screenshots from iOS Simulators for all Storybook stories
+- **Fast Image Comparison** - Uses Pixelmatch with configurable thresholds
+- **SSIM Scoring** - Structural similarity scoring for more accurate diff detection
+- **Web Dashboard** - Review visual changes with side-by-side, diff, and overlay views
+- **Dark Mode** - Full dark mode support in the web dashboard
+- **Diff Overlay** - See exactly where pixels changed with red/magenta highlights
+- **Git Integration** - Branch-based screenshot management
+- **CI/CD Ready** - Upload results to the web dashboard from your CI pipeline
 
 ## Prerequisites
 
 - macOS with Xcode installed
 - Node.js >= 20
-- Yarn >= 4 or npm
+- Yarn >= 4
 - React Native app with Storybook configured
 - iOS Simulator
+- Docker (for local PostgreSQL database)
 
 ## Installation
 
-```bash
-# Install globally
-yarn global add @rn-visual-testing/cli
+Install as a dev dependency in your React Native project:
 
-# Or install in your project
-yarn add -D @rn-visual-testing/cli
+```bash
+npm install -D @diffinitely/cli
+
+# Or with yarn
+yarn add -D @diffinitely/cli
 ```
+
+Then use via `npx diffinitely` or add npm scripts (recommended).
 
 ## Quick Start
 
 ### 1. Initialize in your React Native project
 
 ```bash
-cd ~/workspace/your-rn-app
-rn-visual-test init
+cd ~/your-rn-app
+npx diffinitely init
 ```
 
-This creates a `.rn-visual-testing.json` configuration file.
+This will:
+- Detect your Storybook configuration
+- Find available iOS simulators
+- Create `.diffinitely.json` with sensible defaults
+- Update your `.gitignore`
 
-### 2. Configure your app
-
-Edit `.rn-visual-testing.json`:
-
-```json
-{
-  "storybook": {
-    "port": 7007,
-    "storiesPattern": "src/**/__stories__/**/*.stories.?(ts|tsx|js|jsx)"
-  },
-  "simulator": {
-    "device": "iPhone 15 Pro",
-    "os": "iOS 17.0",
-    "appScheme": "your-app-scheme"
-  },
-  "comparison": {
-    "mode": "threshold",
-    "threshold": 0.01,
-    "includeMetrics": true
-  },
-  "baselineDir": ".visual-baselines",
-  "screenshotDir": ".visual-screenshots"
-}
-```
-
-### 3. Capture screenshots
-
-```bash
-# Build your app first (ensure Storybook is enabled)
-yarn ios
-
-# Capture screenshots
-rn-visual-test capture
-```
-
-Screenshots are saved to `.visual-screenshots/<branch>/`
-
-### 4. Create baselines
-
-On your first run, copy screenshots to baselines:
-
-```bash
-mkdir -p .visual-baselines/ios/iPhone15Pro
-cp .visual-screenshots/$(git branch --show-current)/* .visual-baselines/ios/iPhone15Pro/
-git add .visual-baselines
-git commit -m "chore: add visual baselines"
-```
-
-### 5. Make changes and compare
-
-```bash
-# Make UI changes to your components
-
-# Capture new screenshots
-rn-visual-test capture
-
-# Compare against baselines
-rn-visual-test compare
-
-# View HTML report
-open .visual-screenshots/$(git branch --show-current)/report.html
-```
-
-## CLI Commands
-
-### `capture`
-
-Capture screenshots of all Storybook stories.
-
-```bash
-rn-visual-test capture [options]
-
-Options:
-  -b, --branch <branch>    Override current git branch
-  -d, --device <device>    Override simulator device
-  --skip-boot              Skip booting the simulator
-  --skip-shutdown          Skip shutting down the simulator
-```
-
-### `compare`
-
-Compare screenshots against baselines.
-
-```bash
-rn-visual-test compare [options]
-
-Options:
-  --base <branch>          Base branch for comparison (default: main)
-  --current <branch>       Current branch (default: current git branch)
-  -t, --threshold <value>  Difference threshold 0-1 (default: 0.01)
-  --no-report              Skip HTML report generation
-```
-
-### `init`
-
-Initialize visual testing in your project.
-
-```bash
-rn-visual-test init
-```
-
-## NPM Scripts
-
-Add these to your `package.json`:
+### 2. Add npm scripts
 
 ```json
 {
   "scripts": {
-    "visual:capture": "rn-visual-test capture",
-    "visual:compare": "rn-visual-test compare",
-    "visual:baseline": "cp -r .visual-screenshots/$(git branch --show-current)/* .visual-baselines/ios/iPhone15Pro/"
+    "visual:test": "diffinitely test",
+    "visual:baseline": "diffinitely baseline --update"
   }
 }
 ```
 
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-name: Visual Tests
-on: [pull_request]
-
-jobs:
-  visual-test:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Build app
-        run: |
-          cd ios
-          pod install
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -derivedDataPath build
-
-      - name: Run visual tests
-        run: |
-          yarn visual:capture
-          yarn visual:compare
-
-      - name: Upload screenshots
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: visual-test-results
-          path: .visual-screenshots/
-```
-
-## Configuration
-
-### Storybook Setup
-
-Your React Native app needs Storybook configured with WebSocket support. Example:
-
-```typescript
-// .storybook/index.tsx
-import { getStorybookUI } from '@storybook/react-native'
-
-const StorybookUI = getStorybookUI({
-  port: 7007,
-  host: 'localhost',
-})
-
-export default StorybookUI
-```
-
-### App Integration
-
-The CLI launches your app and expects it to show Storybook UI. Configure your app entry point:
-
-```typescript
-// index.js
-import { AppRegistry } from 'react-native'
-import App from './App'
-import StorybookUI from './.storybook'
-
-const RootComponent = __DEV__ && process.env.STORYBOOK_ENABLED
-  ? StorybookUI
-  : App
-
-AppRegistry.registerComponent('YourApp', () => RootComponent)
-```
-
-## Performance
-
-For faster comparisons, install ODiff:
+### 3. Create initial baselines
 
 ```bash
-# macOS
-brew install odiff
+# Ensure your RN app with Storybook is running
+yarn ios
 
-# Or build from source
-npm install -g odiff-bin
+# Capture screenshots and create baselines
+yarn visual:test --skip-upload
+yarn visual:baseline
+
+# Commit your baselines
+git add .visual-baselines
+git commit -m "chore: add visual baselines"
 ```
 
-Without ODiff, the tool uses Pixelmatch (slower but still accurate).
-
-## Troubleshooting
-
-### Simulator not found
-
-Ensure the device name in config matches exactly:
+### 4. Run visual tests
 
 ```bash
-xcrun simctl list devices
+# After making UI changes, run the test
+yarn visual:test
+
+# If changes are intentional, update baselines
+yarn visual:baseline
 ```
 
-### App doesn't launch
+### 5. (Optional) Web dashboard
 
-1. Verify `appScheme` or `bundleId` in config
-2. Check app is installed: `xcrun simctl listapps booted`
-3. Build app first: `yarn ios`
+For a visual review interface with diff overlays, deploy the web dashboard with Docker:
 
-### Storybook connection fails
+```bash
+cd packages/web
 
-1. Verify `port` in config matches Storybook server
-2. Ensure Storybook is running in app
-3. Check WebSocket support is enabled
+# Start dashboard and database
+docker compose -f docker-compose.prod.yml up -d
+
+# Run migrations (first time)
+docker compose -f docker-compose.prod.yml exec web npx drizzle-kit push
+```
+
+Dashboard will be at `http://localhost:3000`
+
+Add the URL to your `.diffinitely.json`:
+```json
+{
+  "apiUrl": "http://localhost:3000"
+}
+```
+
+See [packages/web/DEPLOYMENT.md](packages/web/DEPLOYMENT.md) for full instructions including HTTPS, nginx, and team setups.
+
+**Dashboard features:**
+- Side-by-side image comparison
+- Diff overlay view with opacity slider
+- Dark mode support
+- Story filtering by status
+
+## CLI Commands
+
+### Main Commands
+
+#### `diffinitely init`
+
+Interactive setup wizard that auto-detects your project configuration.
+
+```bash
+diffinitely init [--force]
+```
+
+#### `diffinitely test`
+
+Run a complete visual test cycle: capture, compare, and upload (if configured).
+
+```bash
+diffinitely test [options]
+
+Options:
+  --skip-capture     Use existing screenshots
+  --skip-upload      Don't upload results
+  --base <branch>    Base branch for comparison (default: main)
+  -t, --threshold    Difference threshold 0-1 (default: 0.01)
+```
+
+#### `diffinitely baseline`
+
+Manage visual baselines.
+
+```bash
+diffinitely baseline [options]
+
+Options:
+  --update    Update baselines from current screenshots
+  --clear     Remove all baselines
+```
+
+### Individual Step Commands
+
+#### `diffinitely capture-all`
+
+Capture screenshots of all Storybook stories.
+
+```bash
+diffinitely capture-all [options]
+
+Options:
+  -b, --branch <branch>    Override current git branch
+  -f, --filter <pattern>   Filter stories by regex
+  --skip-shutdown          Keep simulator running
+```
+
+#### `diffinitely compare`
+
+Compare screenshots against baselines.
+
+```bash
+diffinitely compare [options]
+
+Options:
+  --base <branch>          Base branch (default: main)
+  -t, --threshold <value>  Difference threshold 0-1
+  --no-report              Skip HTML report
+```
+
+#### `diffinitely upload`
+
+Upload results to web dashboard.
+
+```bash
+diffinitely upload [--api-url <url>]
+```
+
+## Web Dashboard
+
+The web dashboard provides a visual interface for reviewing test results:
+
+- **Dashboard** - Overview of all test runs with status
+- **Test Detail** - Review individual story changes
+- **View Modes**:
+  - Side by Side - Compare baseline and current
+  - Diff Only - See only the difference image
+  - Overlay - See diff highlights on the current screenshot
+  - Current Only - View just the current screenshot
+- **Diff Opacity Slider** - Adjust overlay visibility
+- **Dark Mode** - Toggle between light and dark themes
 
 ## Project Structure
 
 ```
-rn-visual-testing/
+diffinitely/
 ├── packages/
-│   ├── cli/           # CLI tool
-│   ├── web/           # Web dashboard (coming soon)
-│   └── shared/        # Shared types
+│   ├── cli/           # CLI tool for capture/compare/upload
+│   ├── web/           # TanStack Start web dashboard
+│   └── shared/        # Shared types and constants
+├── docker-compose.yml # PostgreSQL for local development
 └── README.md
 ```
+
+## Configuration
+
+### Required Settings
+
+| Field | Description |
+|-------|-------------|
+| `storybook.port` | Storybook WebSocket port |
+| `storybook.scheme` | iOS URL scheme for deep linking |
+| `simulator.device` | Exact simulator device name |
+| `simulator.bundleId` | App bundle identifier |
+
+### Optional Settings
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `comparison.threshold` | `0.01` | Pixel diff threshold (0-1) |
+| `baselineDir` | `.visual-baselines` | Directory for baseline images |
+| `screenshotDir` | `.visual-screenshots` | Directory for screenshots |
+| `apiUrl` | - | Web dashboard URL for uploads |
+
+## How It Works
+
+1. **Capture** - CLI boots simulator, launches app with Storybook, navigates to each story via deep links, and captures screenshots
+2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images with transparent backgrounds for changed pixels
+3. **Upload** - Sends results to the web dashboard API, which stores metadata in PostgreSQL
+4. **Review** - Use the web dashboard to review changes with overlay view showing exactly where pixels differ
 
 ## Development
 
@@ -290,24 +256,43 @@ yarn install
 yarn build
 
 # Develop CLI
-cd packages/cli
-yarn dev
+cd packages/cli && yarn dev
 
-# Link for local testing
-yarn link
+# Develop web app
+cd packages/web && yarn dev
 ```
 
-## Roadmap
+## Troubleshooting
 
-- [x] iOS screenshot capture
-- [x] Image comparison (ODiff, Pixelmatch, SSIM)
-- [x] HTML reports
-- [ ] Web dashboard (TanStack Start)
-- [ ] Approval workflow
-- [ ] Git baseline updates
-- [ ] Android emulator support
-- [ ] CI/CD webhooks
-- [ ] GitHub PR integration
+### Simulator not found
+
+Ensure the device name in config matches exactly:
+```bash
+xcrun simctl list devices
+```
+
+### App doesn't launch
+
+1. Verify `scheme` and `bundleId` in config
+2. Check app is installed: `xcrun simctl listapps booted`
+3. Build app first: `yarn ios`
+
+### No diff overlay visible
+
+1. Select a story with changes (yellow percentage badge)
+2. Click the "Overlay" button
+3. Adjust the opacity slider
+
+### Images not loading in web app
+
+Ensure the web app server is running and can access the screenshot directories on your local filesystem.
+
+## Tech Stack
+
+- **CLI**: Node.js, TypeScript, Pixelmatch, Sharp, Commander
+- **Web**: TanStack Start, TanStack Router, Drizzle ORM, Tailwind CSS
+- **Database**: PostgreSQL
+- **Containerization**: Docker
 
 ## License
 

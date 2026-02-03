@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import ora from 'ora'
 import { execa } from 'execa'
-import { StoryScreenshot } from '@rn-visual-testing/shared'
+import { StoryScreenshot } from '@diffinitely/shared'
 import { loadConfig, validateConfig } from '../utils/config'
 import { getCurrentBranch, getCurrentCommitHash } from '../utils/git'
 import { logger } from '../utils/logger'
@@ -15,6 +15,7 @@ export interface CaptureAllOptions {
   delay?: number
   filter?: string
   startDelay?: number // Delay before starting capture
+  skipShutdown?: boolean // Keep simulator running after capture
 }
 
 /**
