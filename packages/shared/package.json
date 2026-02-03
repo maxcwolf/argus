@@ -1,6 +1,8 @@
 {
-  "name": "@argus/shared",
+  "name": "@argus-vrt/shared",
   "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

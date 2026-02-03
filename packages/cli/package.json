@@ -1,19 +1,30 @@
 {
-  "name": "@argus/cli",
+  "name": "@argus-vrt/cli",
   "version": "0.1.0",
   "description": "Argus CLI - Visual Regression Testing for React Native",
+  "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "argus": "./dist/cli.js"
   },
+  "files": [
+    "dist/"
+  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rm -rf dist"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxcwolf/argus.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "dependencies": {
-    "@argus/shared": "*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "execa": "^9.5.2",
@@ -26,10 +37,12 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@argus-vrt/shared": "*",
     "@types/node": "^22.10.2",
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
     "@types/ws": "^8.5.13",
+    "tsup": "^8.0.0",
     "typescript": "^5.7.2"
   }
 }

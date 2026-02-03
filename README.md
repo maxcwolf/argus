@@ -1,17 +1,19 @@
-# Diffinitely
-
-**React Native Storybook Visual Diff Testing**
-
-A Chromatic-like visual regression testing tool for React Native Storybook on iOS simulators. Capture screenshots, compare visual differences, and review changes in a web dashboard.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.svg">
+    <img alt="Argus" src="assets/banner-light.svg" width="640">
+  </picture>
+  <br><br>
+  Capture screenshots from iOS Simulators for all your Storybook stories,<br>compare them against baselines, and review changes in a self-hosted web dashboard.
+</p>
 
 ## Features
 
 - **Automated Screenshot Capture** - Captures screenshots from iOS Simulators for all Storybook stories
-- **Fast Image Comparison** - Uses Pixelmatch with configurable thresholds
-- **SSIM Scoring** - Structural similarity scoring for more accurate diff detection
-- **Web Dashboard** - Review visual changes with side-by-side, diff, and overlay views
-- **Dark Mode** - Full dark mode support in the web dashboard
-- **Diff Overlay** - See exactly where pixels changed with red/magenta highlights
+- **Fast Image Comparison** - Uses Pixelmatch with configurable thresholds and SSIM scoring
+- **Web Dashboard** - Review visual changes with side-by-side, diff, overlay, and current-only views
+- **Story Browser** - Flat list, tree (by component), and grouped (by directory) view modes
 - **Git Integration** - Branch-based screenshot management
 - **CI/CD Ready** - Upload results to the web dashboard from your CI pipeline
 
@@ -19,46 +21,35 @@ A Chromatic-like visual regression testing tool for React Native Storybook on iO
 
 - macOS with Xcode installed
 - Node.js >= 20
-- Yarn >= 4
 - React Native app with Storybook configured
 - iOS Simulator
-- Docker (for local PostgreSQL database)
 
 ## Installation
 
-Install as a dev dependency in your React Native project:
-
 ```bash
-npm install -D @diffinitely/cli
-
-# Or with yarn
-yarn add -D @diffinitely/cli
+npm install -D @argus-vrt/cli
+# or
+yarn add -D @argus-vrt/cli
 ```
-
-Then use via `npx diffinitely` or add npm scripts (recommended).
 
 ## Quick Start
 
-### 1. Initialize in your React Native project
+### 1. Install and initialize
 
 ```bash
-cd ~/your-rn-app
-npx diffinitely init
+yarn add -D @argus-vrt/cli
+yarn argus init
 ```
 
-This will:
-- Detect your Storybook configuration
-- Find available iOS simulators
-- Create `.diffinitely.json` with sensible defaults
-- Update your `.gitignore`
+This will auto-detect your Storybook configuration, find available iOS simulators, and create `.argus.json` with sensible defaults.
 
-### 2. Add npm scripts
+### 2. Add scripts to `package.json`
 
 ```json
 {
   "scripts": {
-    "visual:test": "diffinitely test",
-    "visual:baseline": "diffinitely baseline --update"
+    "visual:test": "argus test",
+    "visual:baseline": "argus baseline --update"
   }
 }
 ```
@@ -66,10 +57,10 @@ This will:
 ### 3. Create initial baselines
 
 ```bash
-# Ensure your RN app with Storybook is running
+# Make sure your React Native app with Storybook is running
 yarn ios
 
-# Capture screenshots and create baselines
+# Capture screenshots and set baselines
 yarn visual:test --skip-upload
 yarn visual:baseline
 
@@ -81,62 +72,21 @@ git commit -m "chore: add visual baselines"
 ### 4. Run visual tests
 
 ```bash
-# After making UI changes, run the test
+# After making UI changes
 yarn visual:test
 
 # If changes are intentional, update baselines
 yarn visual:baseline
 ```
 
-### 5. (Optional) Web dashboard
-
-For a visual review interface with diff overlays, deploy the web dashboard with Docker:
-
-```bash
-cd packages/web
-
-# Start dashboard and database
-docker compose -f docker-compose.prod.yml up -d
-
-# Run migrations (first time)
-docker compose -f docker-compose.prod.yml exec web npx drizzle-kit push
-```
-
-Dashboard will be at `http://localhost:3000`
-
-Add the URL to your `.diffinitely.json`:
-```json
-{
-  "apiUrl": "http://localhost:3000"
-}
-```
-
-See [packages/web/DEPLOYMENT.md](packages/web/DEPLOYMENT.md) for full instructions including HTTPS, nginx, and team setups.
-
-**Dashboard features:**
-- Side-by-side image comparison
-- Diff overlay view with opacity slider
-- Dark mode support
-- Story filtering by status
-
 ## CLI Commands
 
-### Main Commands
-
-#### `diffinitely init`
-
-Interactive setup wizard that auto-detects your project configuration.
-
-```bash
-diffinitely init [--force]
-```
-
-#### `diffinitely test`
+### `argus test`
 
 Run a complete visual test cycle: capture, compare, and upload (if configured).
 
-```bash
-diffinitely test [options]
+```
+argus test [options]
 
 Options:
   --skip-capture     Use existing screenshots
@@ -145,26 +95,32 @@ Options:
   -t, --threshold    Difference threshold 0-1 (default: 0.01)
 ```
 
-#### `diffinitely baseline`
+### `argus init`
+
+Interactive setup wizard that auto-detects your project configuration.
+
+```
+argus init [--force]
+```
+
+### `argus baseline`
 
 Manage visual baselines.
 
-```bash
-diffinitely baseline [options]
+```
+argus baseline [options]
 
 Options:
   --update    Update baselines from current screenshots
   --clear     Remove all baselines
 ```
 
-### Individual Step Commands
-
-#### `diffinitely capture-all`
+### `argus capture-all`
 
 Capture screenshots of all Storybook stories.
 
-```bash
-diffinitely capture-all [options]
+```
+argus capture-all [options]
 
 Options:
   -b, --branch <branch>    Override current git branch
@@ -172,12 +128,12 @@ Options:
   --skip-shutdown          Keep simulator running
 ```
 
-#### `diffinitely compare`
+### `argus compare`
 
 Compare screenshots against baselines.
 
-```bash
-diffinitely compare [options]
+```
+argus compare [options]
 
 Options:
   --base <branch>          Base branch (default: main)
@@ -185,88 +141,70 @@ Options:
   --no-report              Skip HTML report
 ```
 
-#### `diffinitely upload`
+### `argus upload`
 
-Upload results to web dashboard.
-
-```bash
-diffinitely upload [--api-url <url>]
-```
-
-## Web Dashboard
-
-The web dashboard provides a visual interface for reviewing test results:
-
-- **Dashboard** - Overview of all test runs with status
-- **Test Detail** - Review individual story changes
-- **View Modes**:
-  - Side by Side - Compare baseline and current
-  - Diff Only - See only the difference image
-  - Overlay - See diff highlights on the current screenshot
-  - Current Only - View just the current screenshot
-- **Diff Opacity Slider** - Adjust overlay visibility
-- **Dark Mode** - Toggle between light and dark themes
-
-## Project Structure
+Upload results to the web dashboard.
 
 ```
-diffinitely/
-├── packages/
-│   ├── cli/           # CLI tool for capture/compare/upload
-│   ├── web/           # TanStack Start web dashboard
-│   └── shared/        # Shared types and constants
-├── docker-compose.yml # PostgreSQL for local development
-└── README.md
+argus upload [--api-url <url>]
 ```
+
+See the full command reference with all options in the [@argus-vrt/cli README](packages/cli/README.md).
 
 ## Configuration
 
-### Required Settings
+Configuration is stored in `.argus.json` in your project root. Run `argus init` to generate it.
 
-| Field | Description |
-|-------|-------------|
-| `storybook.port` | Storybook WebSocket port |
-| `storybook.scheme` | iOS URL scheme for deep linking |
-| `simulator.device` | Exact simulator device name |
-| `simulator.bundleId` | App bundle identifier |
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `storybook.port` | Yes | - | Storybook WebSocket port |
+| `storybook.scheme` | Yes | - | iOS URL scheme for deep linking |
+| `simulator.device` | Yes | - | Exact simulator device name |
+| `simulator.bundleId` | Yes | - | App bundle identifier |
+| `comparison.threshold` | No | `0.01` | Pixel diff threshold (0-1) |
+| `baselineDir` | No | `.visual-baselines` | Directory for baseline images |
+| `screenshotDir` | No | `.visual-screenshots` | Directory for screenshots |
+| `apiUrl` | No | - | Web dashboard URL for uploads |
 
-### Optional Settings
+## Web Dashboard
 
-| Field | Default | Description |
-|-------|---------|-------------|
-| `comparison.threshold` | `0.01` | Pixel diff threshold (0-1) |
-| `baselineDir` | `.visual-baselines` | Directory for baseline images |
-| `screenshotDir` | `.visual-screenshots` | Directory for screenshots |
-| `apiUrl` | - | Web dashboard URL for uploads |
+Argus includes a self-hosted web dashboard ([`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web)) for reviewing visual diffs — similar to Chromatic, but self-hosted. It provides side-by-side diffs, overlay views with adjustable opacity, story browsing, search, and dark mode.
+
+The dashboard is a full-stack app (TanStack Start + PostgreSQL) that you deploy as a standalone service with Docker:
+
+```bash
+git clone https://github.com/maxcwolf/argus.git
+cd argus/packages/web
+
+# Start the dashboard and database
+docker compose -f docker-compose.prod.yml up -d
+
+# Run migrations (first time)
+docker compose -f docker-compose.prod.yml exec web npx drizzle-kit push
+```
+
+Then point your CLI at it by adding `apiUrl` to your `.argus.json`:
+
+```json
+{
+  "apiUrl": "http://localhost:3000"
+}
+```
+
+See the [@argus-vrt/web README](packages/web/README.md) for configuration options and the [Deployment Guide](packages/web/DEPLOYMENT.md) for production setup with HTTPS and nginx.
 
 ## How It Works
 
-1. **Capture** - CLI boots simulator, launches app with Storybook, navigates to each story via deep links, and captures screenshots
-2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images with transparent backgrounds for changed pixels
+1. **Capture** - Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
+2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images highlighting changed pixels
 3. **Upload** - Sends results to the web dashboard API, which stores metadata in PostgreSQL
 4. **Review** - Use the web dashboard to review changes with overlay view showing exactly where pixels differ
-
-## Development
-
-```bash
-# Install dependencies
-yarn install
-
-# Build all packages
-yarn build
-
-# Develop CLI
-cd packages/cli && yarn dev
-
-# Develop web app
-cd packages/web && yarn dev
-```
 
 ## Troubleshooting
 
 ### Simulator not found
 
-Ensure the device name in config matches exactly:
+Ensure the device name in `.argus.json` matches exactly:
 ```bash
 xcrun simctl list devices
 ```
@@ -285,14 +223,51 @@ xcrun simctl list devices
 
 ### Images not loading in web app
 
-Ensure the web app server is running and can access the screenshot directories on your local filesystem.
+Ensure the web app server is running and can access the screenshot directories. See [image serving options](packages/web/DEPLOYMENT.md#image-serving).
 
-## Tech Stack
+---
 
-- **CLI**: Node.js, TypeScript, Pixelmatch, Sharp, Commander
-- **Web**: TanStack Start, TanStack Router, Drizzle ORM, Tailwind CSS
-- **Database**: PostgreSQL
-- **Containerization**: Docker
+## Contributing
+
+### Project Structure
+
+```
+argus/
+├── packages/
+│   ├── cli/           # CLI tool (published as @argus-vrt/cli)
+│   ├── web/           # Web dashboard (published as @argus-vrt/web)
+│   └── shared/        # Shared types/constants (internal, bundled into CLI via tsup)
+└── package.json       # Yarn 4 workspaces + Turborepo
+```
+
+### Setup
+
+```bash
+git clone https://github.com/maxcwolf/argus.git
+cd argus
+yarn install
+yarn build
+```
+
+The build compiles all three packages in dependency order via [Turborepo](https://turbo.build/): `shared` (tsc) → `cli` (tsup, inlines shared) → `web` (Vite).
+
+### Dev Workflow
+
+```bash
+# CLI — watch mode
+yarn workspace @argus-vrt/cli dev
+
+# Web — requires PostgreSQL via Docker
+cd packages/web && docker compose up -d
+yarn workspace @argus-vrt/web db:push
+yarn workspace @argus-vrt/web dev
+```
+
+### Tech Stack
+
+- **CLI**: Node.js, TypeScript, tsup, Pixelmatch, Sharp, Commander
+- **Web**: TanStack Start, TanStack Router, Drizzle ORM, Tailwind CSS v4, PostgreSQL
+- **Build**: Turborepo, Yarn 4 workspaces
 
 ## License
 

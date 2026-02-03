@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import ora from 'ora'
 import { execSync } from 'child_process'
-import { CONFIG_FILE_NAME } from '@argus/shared'
+import { CONFIG_FILE_NAME } from '@argus-vrt/shared'
 import { logger } from '../utils/logger'
 
 interface InitOptions {

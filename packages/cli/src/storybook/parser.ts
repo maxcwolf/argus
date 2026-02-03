@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import { glob } from 'glob'
 import { join } from 'path'
-import { Story } from '@argus/shared'
+import { Story } from '@argus-vrt/shared'
 import { logger } from '../utils/logger'
 
 /**

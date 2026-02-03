@@ -43,14 +43,6 @@ jobs:
           done
           jq ".version = \"$VERSION\"" package.json > tmp.json && mv tmp.json package.json
 
-      - name: Publish shared package to npm
-        run: |
-          cd packages/shared
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        continue-on-error: true
-
       - name: Publish CLI to npm
         run: |
           cd packages/cli
@@ -59,27 +51,31 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
+      - name: Publish web to npm
+        run: |
+          cd packages/web
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
+
       - name: Package CLI for GitHub release
         run: |
-          mkdir -p release/diffinitely-cli
+          mkdir -p release/argus-cli
 
           # Copy CLI files
-          cp -r packages/cli/dist release/diffinitely-cli/
-          cp packages/cli/package.json release/diffinitely-cli/
-
-          # Copy shared dependency
-          mkdir -p release/diffinitely-cli/node_modules/@diffinitely
-          cp -r packages/shared release/diffinitely-cli/node_modules/@diffinitely/
+          cp -r packages/cli/dist release/argus-cli/
+          cp packages/cli/package.json release/argus-cli/
 
           # Create install script
-          cat > release/diffinitely-cli/install.sh << 'INSTALL_EOF'
+          cat > release/argus-cli/install.sh << 'INSTALL_EOF'
           #!/bin/bash
           set -e
 
-          INSTALL_DIR="${HOME}/.diffinitely"
+          INSTALL_DIR="${HOME}/.argus"
           BIN_DIR="${HOME}/.local/bin"
 
-          echo "Installing Diffinitely CLI..."
+          echo "Installing Argus CLI..."
 
           # Create directories
           mkdir -p "$INSTALL_DIR"
@@ -93,54 +89,51 @@ jobs:
           npm install --production --ignore-scripts 2>/dev/null || true
 
           # Create executable wrapper
-          cat > "$BIN_DIR/diffinitely" << 'EOF'
+          cat > "$BIN_DIR/argus" << 'EOF'
           #!/bin/bash
-          node "$HOME/.diffinitely/dist/cli.js" "$@"
+          node "$HOME/.argus/dist/cli.js" "$@"
           EOF
-          chmod +x "$BIN_DIR/diffinitely"
+          chmod +x "$BIN_DIR/argus"
 
           echo ""
-          echo "✅ Diffinitely CLI installed!"
+          echo "Argus CLI installed!"
           echo ""
           echo "Make sure $BIN_DIR is in your PATH:"
           echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
           echo ""
-          echo "Then run: diffinitely --help"
+          echo "Then run: argus --help"
           INSTALL_EOF
-          chmod +x release/diffinitely-cli/install.sh
+          chmod +x release/argus-cli/install.sh
 
           # Create tarball
           cd release
-          tar -czf diffinitely-cli-${{ steps.version.outputs.VERSION }}.tar.gz diffinitely-cli
+          tar -czf argus-cli-${{ steps.version.outputs.VERSION }}.tar.gz argus-cli
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: release/diffinitely-cli-${{ steps.version.outputs.VERSION }}.tar.gz
+          files: release/argus-cli-${{ steps.version.outputs.VERSION }}.tar.gz
           generate_release_notes: true
           body: |
             ## Installation
 
             ```bash
-            # Add to your React Native project
-            npm install -D @diffinitely/cli
-            # or
-            yarn add -D @diffinitely/cli
+            yarn add -D @argus-vrt/cli
             ```
 
             ## Quick Start
 
             ```bash
-            npx diffinitely init    # Set up configuration
-            npx diffinitely test    # Run visual tests
+            yarn argus init    # Set up configuration
+            yarn argus test    # Run visual tests
             ```
 
-            Or add npm scripts:
+            Or add scripts to your `package.json`:
             ```json
             {
               "scripts": {
-                "visual:test": "diffinitely test",
-                "visual:baseline": "diffinitely baseline --update"
+                "visual:test": "argus test",
+                "visual:baseline": "argus baseline --update"
               }
             }
             ```

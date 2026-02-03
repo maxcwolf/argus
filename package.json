@@ -1,8 +1,9 @@
 {
-  "name": "@diffinitely/monorepo",
+  "name": "@argus-vrt/monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Diffinitely - React Native Storybook Visual Diff Testing",
+  "description": "Argus - Visual Regression Testing for React Native",
+  "license": "MIT",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
