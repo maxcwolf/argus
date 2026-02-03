@@ -68,6 +68,7 @@ export interface StorybookConfig {
   storiesPattern?: string
   startCommand?: string
   launchApp?: string
+  scheme?: string // URL scheme for deep linking (e.g., 'myapp' for myapp://)
 }
 
 export interface VisualTestConfig {

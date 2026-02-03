@@ -4,6 +4,9 @@ import { Command } from 'commander'
 import chalk from 'chalk'
 import { captureCommand } from './commands/capture'
 import { compareCommand } from './commands/compare'
+import { screenshotCommand } from './commands/screenshot'
+import { listStoriesCommand } from './commands/list-stories'
+import { captureAllCommand } from './commands/capture-all'
 
 const program = new Command()
 
@@ -41,6 +44,58 @@ program
   .action(async (options) => {
     try {
       await compareCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+program
+  .command('screenshot')
+  .description('Capture a single screenshot of the current simulator screen')
+  .option('-n, --name <name>', 'Name for the screenshot')
+  .option('-b, --branch <branch>', 'Override current git branch')
+  .action(async (options) => {
+    try {
+      await screenshotCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+program
+  .command('list-stories')
+  .description('List all stories in the project')
+  .option('--json', 'Output as JSON')
+  .action(async (options) => {
+    try {
+      await listStoriesCommand(options)
+    } catch (error: any) {
+      console.error(chalk.red('\n✖ Error:'), error.message)
+      if (process.env.DEBUG) {
+        console.error(error.stack)
+      }
+      process.exit(1)
+    }
+  })
+
+program
+  .command('capture-all')
+  .description('Capture screenshots of all stories using deep linking')
+  .option('-b, --branch <branch>', 'Override current git branch')
+  .option('-s, --scheme <scheme>', 'URL scheme for deep linking (default: from config)')
+  .option('-d, --delay <ms>', 'Delay between captures in ms (default: 1500)', parseInt)
+  .option('-f, --filter <pattern>', 'Filter stories by regex pattern')
+  .action(async (options) => {
+    try {
+      await captureAllCommand(options)
     } catch (error: any) {
       console.error(chalk.red('\n✖ Error:'), error.message)
       if (process.env.DEBUG) {

@@ -1,4 +1,4 @@
-import { execaCommand } from 'execa'
+import { execaCommand, execa } from 'execa'
 import { SimulatorConfig, SIMULATOR_WAIT_TIMEOUT } from '@rn-visual-testing/shared'
 import { logger } from '../utils/logger'
 
@@ -10,28 +10,41 @@ export interface SimulatorDevice {
 }
 
 /**
- * Find simulator by name
+ * Find simulator by name (prefers booted devices)
  */
 export async function findSimulator(config: SimulatorConfig): Promise<SimulatorDevice | null> {
   try {
     const { stdout } = await execaCommand('xcrun simctl list devices --json')
     const data = JSON.parse(stdout)
 
-    // Find matching device
+    const matchingDevices: SimulatorDevice[] = []
+
+    // Find all matching devices
     for (const [runtime, devices] of Object.entries(data.devices)) {
       for (const device of devices as any[]) {
         if (device.name === config.device && device.isAvailable !== false) {
-          return {
+          matchingDevices.push({
             udid: device.udid,
             name: device.name,
             state: device.state,
             isAvailable: device.isAvailable !== false,
-          }
+          })
         }
       }
     }
 
-    return null
+    if (matchingDevices.length === 0) {
+      return null
+    }
+
+    // Prefer booted device
+    const bootedDevice = matchingDevices.find((d) => d.state === 'Booted')
+    if (bootedDevice) {
+      return bootedDevice
+    }
+
+    // Return first available device
+    return matchingDevices[0]
   } catch (error) {
     logger.error(`Failed to find simulator: ${error}`)
     return null
@@ -171,7 +184,8 @@ export async function terminateApp(udid: string, bundleId: string): Promise<void
  */
 export async function captureScreenshot(udid: string, outputPath: string): Promise<void> {
   try {
-    await execaCommand(`xcrun simctl io ${udid} screenshot "${outputPath}"`)
+    // Use array form to avoid shell quoting issues
+    await execa('xcrun', ['simctl', 'io', udid, 'screenshot', outputPath])
     logger.debug(`Screenshot saved: ${outputPath}`)
   } catch (error) {
     throw new Error(`Failed to capture screenshot: ${error}`)
