@@ -1,55 +1,86 @@
 # Deploying Argus Web Dashboard
 
-## Docker Deployment (Recommended)
+## Quick Start (Recommended)
 
-### Quick Start
+The easiest way to deploy Argus is with the CLI:
 
 ```bash
-cd packages/web
+# Interactive setup wizard
+npx @argus-vrt/web init
 
-# Start the dashboard and database
-docker compose -f docker-compose.prod.yml up -d
-
-# Run database migrations (first time only)
-docker compose -f docker-compose.prod.yml exec web \
-  npx drizzle-kit push
-
-# Check logs
-docker compose -f docker-compose.prod.yml logs -f
+# Start the dashboard
+npx @argus-vrt/web start
 ```
 
-The dashboard will be available at `http://localhost:3000`
+The `init` wizard generates `docker-compose.yml`, `.env`, and optionally `nginx.conf` with your chosen settings. See the [README](./README.md) for all CLI commands.
+
+---
+
+## Manual Docker Deployment
+
+If you prefer to set things up manually, the web dashboard is available as a Docker image:
+
+```
+ghcr.io/maxcwolf/argus-web:latest
+```
+
+### Docker Compose Example
+
+```yaml
+services:
+  web:
+    image: ghcr.io/maxcwolf/argus-web:latest
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - DATABASE_URL=postgresql://argus:${DB_PASSWORD:-argus}@db:5432/argus
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ${SCREENSHOTS_PATH:-./screenshots}:/screenshots:ro
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: argus
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-argus}
+      POSTGRES_DB: argus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
 
 ### Configuration
 
-Create a `.env` file to customize settings:
+Create a `.env` file:
 
 ```bash
-# .env
 PORT=3000
 DB_PASSWORD=your-secure-password
-
-# Path to screenshots directory (for image serving)
 SCREENSHOTS_PATH=/path/to/your/screenshots
 ```
 
 ### Image Serving
 
-The dashboard needs access to the screenshot files to display them. You have two options:
-
-#### Option A: Mount Screenshots Directory
-
-If the dashboard runs on the same machine as your screenshots:
+The dashboard needs access to screenshot files. Mount the directory into the container:
 
 ```yaml
-# In docker-compose.prod.yml
 volumes:
   - /Users/yourname/projects:/screenshots:ro
 ```
 
-Then images at `/Users/yourname/projects/app/.visual-screenshots/...` will be served.
-
-#### Option B: Shared Network Storage
+Images at `/Users/yourname/projects/app/.visual-screenshots/...` will be served.
 
 For team setups, mount a shared NFS/SMB volume:
 
@@ -65,7 +96,6 @@ volumes:
 For HTTPS and domain setup:
 
 ```nginx
-# /etc/nginx/sites-available/argus
 server {
     listen 80;
     server_name argus.yourcompany.com;
@@ -91,37 +121,46 @@ server {
 }
 ```
 
-### Useful Commands
+Or use `npx @argus-vrt/web init` with a domain to generate this automatically.
+
+---
+
+## Managing Your Deployment
+
+### With the CLI
 
 ```bash
-# Start services
-docker compose -f docker-compose.prod.yml up -d
+npx @argus-vrt/web start     # Start containers
+npx @argus-vrt/web stop      # Stop containers
+npx @argus-vrt/web logs      # Stream logs
+npx @argus-vrt/web status    # Health check
+npx @argus-vrt/web upgrade   # Pull latest image + restart
+```
 
-# Stop services
-docker compose -f docker-compose.prod.yml down
+### Manual Commands
+
+```bash
+# Start
+docker compose up -d
+
+# Stop
+docker compose down
 
 # View logs
-docker compose -f docker-compose.prod.yml logs -f web
+docker compose logs -f web
 
-# Rebuild after code changes
-docker compose -f docker-compose.prod.yml build --no-cache
-docker compose -f docker-compose.prod.yml up -d
-
-# Reset database (caution: deletes all data)
-docker compose -f docker-compose.prod.yml down -v
-docker compose -f docker-compose.prod.yml up -d
+# Pull latest and restart
+docker compose pull && docker compose up -d
 ```
 
 ### Backup Database
 
 ```bash
 # Backup
-docker compose -f docker-compose.prod.yml exec db \
-  pg_dump -U argus argus > backup.sql
+docker compose exec db pg_dump -U argus argus > backup.sql
 
 # Restore
-docker compose -f docker-compose.prod.yml exec -T db \
-  psql -U argus argus < backup.sql
+docker compose exec -T db psql -U argus argus < backup.sql
 ```
 
 ---
@@ -135,20 +174,3 @@ docker compose -f docker-compose.prod.yml exec -T db \
 | `DB_PASSWORD` | `argus` | Database password |
 | `SCREENSHOTS_PATH` | `./screenshots` | Path to mount for image serving |
 | `NODE_ENV` | `production` | Node environment |
-
----
-
-## Updating
-
-```bash
-# Pull latest changes
-git pull
-
-# Rebuild and restart
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
-
-# Run any new migrations
-docker compose -f docker-compose.prod.yml exec web \
-  npx drizzle-kit push
-```

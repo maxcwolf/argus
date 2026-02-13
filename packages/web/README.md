@@ -1,70 +1,83 @@
 # @argus-vrt/web
 
-**Web dashboard for reviewing visual regression test results.**
+**CLI tool for deploying and managing the Argus web dashboard.**
 
-A self-hosted dashboard that pairs with [@argus-vrt/cli](https://www.npmjs.com/package/@argus-vrt/cli) to give your team a visual review interface for screenshot diffs — similar to Chromatic, but self-hosted.
+The Argus web dashboard is a self-hosted review interface for visual regression test results — similar to Chromatic, but self-hosted. This package provides an interactive CLI to set up and manage the dashboard via Docker.
 
-## Features
-
-- **Test Overview** - Dashboard showing all test runs with status badges
-- **Image Comparison** - Four view modes:
-  - Side by Side - Compare baseline and current screenshots
-  - Diff Only - View the difference image
-  - Overlay - See diff highlights overlaid on current screenshot with adjustable opacity
-  - Current Only - View just the current screenshot
-- **Story Browser** - Three organization modes:
-  - Flat list - Simple alphabetical list
-  - Tree view - Grouped by component name
-  - Grouped view - Organized by directory structure
-- **Search** - Typeahead search with Cmd/Ctrl+K keyboard shortcut
-- **Filtering** - Filter stories by status (all, changed, new, passed)
-- **Mobile Responsive** - Drawer-based navigation on mobile devices
-- **Dark Mode** - Full dark mode support
-
-## Deployment
-
-### Quick Start with Docker
+## Quick Start
 
 ```bash
-# Clone the repo
-git clone https://github.com/maxcwolf/argus.git
-cd argus/packages/web
+# Run the interactive setup wizard
+npx @argus-vrt/web init
 
-# Start the dashboard and database
-docker compose -f docker-compose.prod.yml up -d
+# Start the dashboard
+npx @argus-vrt/web start
 
-# Run database migrations (first time only)
-docker compose -f docker-compose.prod.yml exec web npx drizzle-kit push
+# Open http://localhost:3000
 ```
 
-The dashboard will be available at `http://localhost:3000`.
+The `init` wizard generates a `docker-compose.yml`, `.env`, and optionally `nginx.conf` in an `./argus/` directory.
 
-### Configuration
+## Prerequisites
 
-Create a `.env` file to customize settings:
+- [Docker](https://docs.docker.com/get-docker/) installed and running
+- Node.js >= 20 (for running the CLI via npx)
+
+## Commands
+
+### `npx @argus-vrt/web init`
+
+Interactive setup wizard. Prompts for:
+
+- **PostgreSQL** — include a container (recommended) or use an external instance
+- **Port** — default 3000
+- **Domain** — custom domain or localhost
+- **HTTPS** — Let's Encrypt, custom certificate, or none
+- **Reverse proxy** — include an Nginx container or manage yourself
+- **Screenshots path** — where uploaded screenshots are stored
+
+Generates configuration files into `./argus/` (or `--dir <path>`).
+
+### `npx @argus-vrt/web start`
+
+Start Argus containers (`docker compose up -d`).
+
+### `npx @argus-vrt/web stop`
+
+Stop Argus containers (`docker compose down`).
+
+### `npx @argus-vrt/web logs`
+
+Stream container logs (`docker compose logs -f`).
 
 ```bash
-PORT=3000
-DB_PASSWORD=your-secure-password
-
-# Path to screenshots directory (for image serving)
-SCREENSHOTS_PATH=/path/to/your/screenshots
+npx @argus-vrt/web logs --service web    # only web container
+npx @argus-vrt/web logs --service db     # only database
 ```
 
-### Environment Variables
+### `npx @argus-vrt/web status`
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | Server port |
-| `DATABASE_URL` | (auto) | PostgreSQL connection string |
-| `DB_PASSWORD` | `argus` | Database password |
-| `SCREENSHOTS_PATH` | `./screenshots` | Path to mount for image serving |
+Show container status and run a health check on the web dashboard.
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for full production deployment instructions including Nginx reverse proxy with HTTPS, image serving options, and database backup/restore.
+### `npx @argus-vrt/web upgrade`
+
+Pull the latest Docker images and restart containers.
+
+```bash
+npx @argus-vrt/web upgrade
+```
+
+## Options
+
+All management commands (`start`, `stop`, `logs`, `status`, `upgrade`) accept:
+
+| Flag | Description |
+|------|-------------|
+| `-d, --dir <path>` | Path to the Argus directory (default: `./argus`) |
 
 ## Connecting the CLI
 
-Once the dashboard is running, point your CLI at it by adding `apiUrl` to your project's `.argus.json`:
+Once the dashboard is running, point the testing CLI at it by adding `apiUrl` to your project's `.argus.json`:
 
 ```json
 {
@@ -78,80 +91,23 @@ Then upload results after running tests:
 npx argus test
 ```
 
-## Tech Stack
+## Environment Variables
 
-- **Framework**: [TanStack Start](https://tanstack.com/start) with React 19
-- **Routing**: [TanStack Router](https://tanstack.com/router) (file-based)
-- **Database**: PostgreSQL with [Drizzle ORM](https://orm.drizzle.team/)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with design tokens
-- **Fonts**: Inter (body), Space Grotesk (headings), JetBrains Mono (code)
+The generated `.env` file supports:
 
----
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Server port |
+| `DATABASE_URL` | (auto) | PostgreSQL connection string (external DB only) |
+| `DB_PASSWORD` | `argus` | Database password (container DB only) |
+| `SCREENSHOTS_PATH` | `./argus-data/images` | Path to screenshots directory |
 
-## Development
+## Docker Image
 
-### Prerequisites
-
-- Node.js >= 20
-- Yarn >= 4
-- Docker (for PostgreSQL)
-
-### Setup
-
-From the repository root:
-
-```bash
-# Install all dependencies
-yarn install
-
-# Start PostgreSQL (from this directory)
-cd packages/web
-docker compose up -d
-
-# Push database schema
-yarn workspace @argus-vrt/web db:push
-
-# Start dev server at http://localhost:3000
-yarn workspace @argus-vrt/web dev
-```
-
-Or if you're already in `packages/web`:
-
-```bash
-docker compose up -d
-yarn db:push
-yarn dev
-```
-
-### Scripts
-
-| Script | Description |
-|--------|-------------|
-| `yarn dev` | Start development server on port 3000 |
-| `yarn build` | Build for production |
-| `yarn preview` | Preview production build |
-| `yarn test` | Run tests with Vitest |
-| `yarn db:generate` | Generate Drizzle migrations |
-| `yarn db:push` | Push schema changes to database |
-| `yarn db:studio` | Open Drizzle Studio |
-
-### Project Structure
+The web dashboard is distributed as a Docker image on GitHub Container Registry:
 
 ```
-src/
-├── components/
-│   ├── image/           # Image comparison components
-│   ├── story/           # Story list/tree components
-│   └── ui/              # Shared UI components
-├── hooks/               # React hooks
-├── lib/                 # Utilities
-├── routes/              # File-based routes
-│   ├── __root.tsx       # Root layout
-│   ├── index.tsx        # Dashboard home
-│   ├── tests/           # Test detail pages
-│   └── branches/        # Branch pages
-├── db/                  # Database schema
-└── styles.css           # Global styles & design tokens
+ghcr.io/maxcwolf/argus-web:latest
 ```
 
 ## License

@@ -170,17 +170,20 @@ Configuration is stored in `.argus.json` in your project root. Run `argus init` 
 
 Argus includes a self-hosted web dashboard ([`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web)) for reviewing visual diffs — similar to Chromatic, but self-hosted. It provides side-by-side diffs, overlay views with adjustable opacity, story browsing, search, and dark mode.
 
-The dashboard is a full-stack app (TanStack Start + PostgreSQL) that you deploy as a standalone service with Docker:
+Deploy the dashboard with a single command:
 
 ```bash
-git clone https://github.com/maxcwolf/argus.git
-cd argus/packages/web
+# Interactive setup wizard — generates docker-compose.yml, .env, nginx.conf
+npx @argus-vrt/web init
 
-# Start the dashboard and database
-docker compose -f docker-compose.prod.yml up -d
+# Start the dashboard
+npx @argus-vrt/web start
 
-# Run migrations (first time)
-docker compose -f docker-compose.prod.yml exec web npx drizzle-kit push
+# Manage your deployment
+npx @argus-vrt/web stop      # Stop containers
+npx @argus-vrt/web logs      # Stream logs
+npx @argus-vrt/web status    # Health check
+npx @argus-vrt/web upgrade   # Pull latest image + restart
 ```
 
 Then point your CLI at it by adding `apiUrl` to your `.argus.json`:
@@ -191,7 +194,7 @@ Then point your CLI at it by adding `apiUrl` to your `.argus.json`:
 }
 ```
 
-See the [@argus-vrt/web README](packages/web/README.md) for configuration options and the [Deployment Guide](packages/web/DEPLOYMENT.md) for production setup with HTTPS and nginx.
+See the [@argus-vrt/web README](packages/web/README.md) for all CLI options and configuration.
 
 ## How It Works
 
