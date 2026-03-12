@@ -143,7 +143,7 @@ Options:
 
 ### `argus upload`
 
-Upload results to the web dashboard.
+Upload results to the web dashboard. Requires an API key if the dashboard has authentication configured.
 
 ```
 argus upload [--api-url <url>]
@@ -165,10 +165,13 @@ Configuration is stored in `.argus.json` in your project root. Run `argus init` 
 | `baselineDir` | No | `.visual-baselines` | Directory for baseline images |
 | `screenshotDir` | No | `.visual-screenshots` | Directory for screenshots |
 | `apiUrl` | No | - | Web dashboard URL for uploads |
+| `apiKey` | No | - | API key for authenticating uploads |
 
 ## Web Dashboard
 
 Argus includes a self-hosted web dashboard ([`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web)) for reviewing visual diffs — similar to Chromatic, but self-hosted. It provides side-by-side diffs, overlay views with adjustable opacity, story browsing, search, and dark mode.
+
+The dashboard requires **GitHub OAuth** for authentication. Create a [GitHub OAuth App](https://github.com/settings/developers) before running `init`.
 
 Deploy the dashboard with a single command:
 
@@ -180,17 +183,19 @@ npx @argus-vrt/web init
 npx @argus-vrt/web start
 
 # Manage your deployment
-npx @argus-vrt/web stop      # Stop containers
-npx @argus-vrt/web logs      # Stream logs
-npx @argus-vrt/web status    # Health check
-npx @argus-vrt/web upgrade   # Pull latest image + restart
+npx @argus-vrt/web stop        # Stop containers
+npx @argus-vrt/web logs        # Stream logs
+npx @argus-vrt/web status      # Health check
+npx @argus-vrt/web upgrade     # Pull latest image + restart
+npx @argus-vrt/web setup-ssl <domain>  # Let's Encrypt certificate
 ```
 
-Then point your CLI at it by adding `apiUrl` to your `.argus.json`:
+Then point your CLI at it by adding `apiUrl` and `apiKey` to your `.argus.json`:
 
 ```json
 {
-  "apiUrl": "http://localhost:3000"
+  "apiUrl": "http://localhost:3000",
+  "apiKey": "your-api-key-from-init"
 }
 ```
 

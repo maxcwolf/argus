@@ -137,7 +137,7 @@ Options:
 
 ### `argus upload`
 
-Upload comparison results to the web dashboard.
+Upload comparison results to the web dashboard. Requires an API key if the dashboard has `ARGUS_API_KEY` configured (set during `npx @argus-vrt/web init`).
 
 ```
 argus upload [options]
@@ -198,6 +198,7 @@ Configuration is stored in `.argus.json` in your project root. Run `argus init` 
 | `baselineDir` | No | Directory for baseline images (default: `.visual-baselines`) |
 | `screenshotDir` | No | Directory for screenshots (default: `.visual-screenshots`) |
 | `apiUrl` | No | Web dashboard URL for uploading results |
+| `apiKey` | No | API key for authenticating uploads to the dashboard |
 
 ## Web Dashboard
 

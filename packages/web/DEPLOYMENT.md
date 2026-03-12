@@ -14,6 +14,16 @@ npx @argus-vrt/web start
 
 The `init` wizard generates `docker-compose.yml`, `.env`, and optionally `nginx.conf` with your chosen settings. See the [README](./README.md) for all CLI commands.
 
+### Authentication Setup
+
+Before running `init`, create a **GitHub OAuth App**:
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers) → **New OAuth App**
+2. Set the **Authorization callback URL** to `https://your-domain.com/auth/github/callback`
+3. Save the **Client ID** and generate a **Client Secret**
+
+The `init` wizard will prompt for these values and auto-generate a session secret and API key.
+
 ---
 
 ## Manual Docker Deployment
@@ -35,6 +45,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://argus:${DB_PASSWORD:-argus}@db:5432/argus
       - NODE_ENV=production
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ARGUS_API_KEY=${ARGUS_API_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -69,6 +83,16 @@ Create a `.env` file:
 PORT=3000
 DB_PASSWORD=your-secure-password
 SCREENSHOTS_PATH=/path/to/your/screenshots
+
+# GitHub OAuth (required)
+GITHUB_CLIENT_ID=your-client-id
+GITHUB_CLIENT_SECRET=your-client-secret
+
+# Session encryption (generate with: openssl rand -hex 32)
+SESSION_SECRET=your-random-secret
+
+# API key for CI/CD uploads (generate with: openssl rand -hex 32)
+ARGUS_API_KEY=your-api-key
 ```
 
 ### Image Serving
@@ -116,12 +140,14 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
 }
 ```
 
-Or use `npx @argus-vrt/web init` with a domain to generate this automatically.
+Or use `npx @argus-vrt/web init` with a domain to generate this automatically, then run `npx @argus-vrt/web setup-ssl <domain>` to obtain a Let's Encrypt certificate.
 
 ---
 
@@ -130,11 +156,12 @@ Or use `npx @argus-vrt/web init` with a domain to generate this automatically.
 ### With the CLI
 
 ```bash
-npx @argus-vrt/web start     # Start containers
-npx @argus-vrt/web stop      # Stop containers
-npx @argus-vrt/web logs      # Stream logs
-npx @argus-vrt/web status    # Health check
-npx @argus-vrt/web upgrade   # Pull latest image + restart
+npx @argus-vrt/web start       # Start containers
+npx @argus-vrt/web stop        # Stop containers
+npx @argus-vrt/web logs        # Stream logs
+npx @argus-vrt/web status      # Health check
+npx @argus-vrt/web upgrade     # Pull latest image + restart
+npx @argus-vrt/web setup-ssl <domain>  # Obtain Let's Encrypt certificate
 ```
 
 ### Manual Commands
@@ -165,6 +192,28 @@ docker compose exec -T db psql -U argus argus < backup.sql
 
 ---
 
+## CI/CD Upload Authentication
+
+The `/api/upload` endpoint requires an API key. Pass it via the `Authorization` header:
+
+```bash
+curl -X POST https://your-domain.com/api/upload \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"branch":"main","commitHash":"abc123","stories":[...]}'
+```
+
+If using the Argus CLI, add `apiKey` to your `.argus.json`:
+
+```json
+{
+  "apiUrl": "https://your-domain.com",
+  "apiKey": "your-api-key"
+}
+```
+
+---
+
 ## Environment Variables
 
 | Variable | Default | Description |
@@ -173,4 +222,8 @@ docker compose exec -T db psql -U argus argus < backup.sql
 | `DATABASE_URL` | (auto) | PostgreSQL connection string |
 | `DB_PASSWORD` | `argus` | Database password |
 | `SCREENSHOTS_PATH` | `./screenshots` | Path to mount for image serving |
+| `GITHUB_CLIENT_ID` | — | GitHub OAuth App client ID |
+| `GITHUB_CLIENT_SECRET` | — | GitHub OAuth App client secret |
+| `SESSION_SECRET` | — | Encryption key for session cookies |
+| `ARGUS_API_KEY` | — | API key for CI/CD upload authentication |
 | `NODE_ENV` | `production` | Node environment |
