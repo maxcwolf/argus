@@ -5,6 +5,7 @@ import { stopCommand } from "./commands/stop.js";
 import { logsCommand } from "./commands/logs.js";
 import { statusCommand } from "./commands/status.js";
 import { upgradeCommand } from "./commands/upgrade.js";
+import { setupSslCommand } from "./commands/setup-ssl.js";
 
 const program = new Command();
 
@@ -49,5 +50,12 @@ program
   .description("Pull latest images and restart")
   .option("-d, --dir <path>", "Argus directory")
   .action(upgradeCommand);
+
+program
+  .command("setup-ssl")
+  .description("Obtain a Let's Encrypt SSL certificate")
+  .argument("<domain>", "Domain to obtain certificate for")
+  .option("-d, --dir <path>", "Argus directory")
+  .action(setupSslCommand);
 
 program.parse();

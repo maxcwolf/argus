@@ -4,9 +4,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install dependencies for the monorepo
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
 COPY packages/web/package.json ./packages/web/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/cli/package.json ./packages/cli/
 
 RUN corepack enable && corepack prepare yarn@4.12.0 --activate
 RUN yarn install --immutable

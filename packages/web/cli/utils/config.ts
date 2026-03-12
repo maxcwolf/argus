@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -11,9 +12,10 @@ export function findArgusDir(dir?: string): string {
   const target = dir ? resolve(dir) : resolve(process.cwd(), DEFAULT_DIR);
 
   if (!existsSync(resolve(target, "docker-compose.yml"))) {
-    throw new Error(
-      `No docker-compose.yml found in ${target}.\nRun 'argus-web init' first to set up Argus.`
+    console.error(
+      `${chalk.red("Error:")} No docker-compose.yml found in ${target}\nRun ${chalk.cyan("argus-web init")} first to set up Argus.`
     );
+    process.exit(1);
   }
 
   return target;
