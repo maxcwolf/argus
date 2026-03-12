@@ -1,7 +1,8 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Sun, Moon, Menu, X } from 'lucide-react'
+import { Sun, Moon, Menu, X, LogOut } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { getCurrentUser } from '../auth/user'
 
 import appCss from '../styles.css?url'
 
@@ -20,10 +21,28 @@ export const Route = createRootRoute({
       { rel: 'stylesheet', href: appCss },
     ],
   }),
+  beforeLoad: async ({ location }) => {
+    // Skip auth check for the upload page (used by CI)
+    if (location.pathname === '/upload') return
+
+    const user = await getCurrentUser()
+    if (!user) {
+      const returnTo = encodeURIComponent(location.pathname + location.search)
+      throw new Response(null, {
+        status: 302,
+        headers: { Location: `/auth/github?returnTo=${returnTo}` },
+      })
+    }
+  },
+  loader: async () => {
+    const user = await getCurrentUser()
+    return { user }
+  },
   component: RootComponent,
 })
 
 function RootComponent() {
+  const { user } = Route.useLoaderData()
   const [darkMode, setDarkMode] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -117,6 +136,29 @@ function RootComponent() {
                 >
                   {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
+                {user && (
+                  <div className="flex items-center gap-3 ml-2 pl-4 border-l border-gray-200 dark:border-gray-700">
+                    {user.avatarUrl && (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name || ''}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {user.name}
+                    </span>
+                    <form action="/auth/logout" method="POST">
+                      <button
+                        type="submit"
+                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        title="Sign out"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
 
               {/* Mobile menu button */}
@@ -147,7 +189,7 @@ function RootComponent() {
           <div
             className={cn(
               'md:hidden overflow-hidden transition-all duration-300 ease-in-out',
-              mobileMenuOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
+              mobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
             )}
           >
             <div className="px-4 py-2 space-y-1 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
@@ -161,6 +203,30 @@ function RootComponent() {
                   {link.label}
                 </a>
               ))}
+              {user && (
+                <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 dark:border-gray-700 mt-1 pt-2">
+                  <div className="flex items-center gap-2">
+                    {user.avatarUrl && (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name || ''}
+                        className="w-6 h-6 rounded-full"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {user.name}
+                    </span>
+                  </div>
+                  <form action="/auth/logout" method="POST">
+                    <button
+                      type="submit"
+                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </nav>

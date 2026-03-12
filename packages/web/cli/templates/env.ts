@@ -4,6 +4,10 @@ export interface EnvOptions {
   dbConnectionString?: string;
   dbPassword: string;
   screenshotsPath: string;
+  githubClientId: string;
+  githubClientSecret: string;
+  sessionSecret: string;
+  apiKey: string;
 }
 
 export function generateEnv(options: EnvOptions): string {
@@ -28,6 +32,19 @@ export function generateEnv(options: EnvOptions): string {
 
   lines.push("# Path to screenshots directory (mounted read-only into the container)");
   lines.push(`SCREENSHOTS_PATH=${options.screenshotsPath}`);
+  lines.push("");
+
+  lines.push("# GitHub OAuth (create app at https://github.com/settings/developers)");
+  lines.push(`GITHUB_CLIENT_ID=${options.githubClientId}`);
+  lines.push(`GITHUB_CLIENT_SECRET=${options.githubClientSecret}`);
+  lines.push("");
+
+  lines.push("# Session encryption key (auto-generated)");
+  lines.push(`SESSION_SECRET=${options.sessionSecret}`);
+  lines.push("");
+
+  lines.push("# API key for CI/CD uploads (Authorization: Bearer <key>)");
+  lines.push(`ARGUS_API_KEY=${options.apiKey}`);
   lines.push("");
 
   return lines.join("\n");

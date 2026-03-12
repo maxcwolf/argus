@@ -38,6 +38,10 @@ export function generateDockerCompose(options: ComposeOptions): string {
     lines.push("      - DATABASE_URL=${DATABASE_URL}");
   }
   lines.push("      - NODE_ENV=production");
+  lines.push("      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}");
+  lines.push("      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}");
+  lines.push("      - SESSION_SECRET=${SESSION_SECRET}");
+  lines.push("      - ARGUS_API_KEY=${ARGUS_API_KEY}");
 
   if (options.includeDb) {
     lines.push("    depends_on:");

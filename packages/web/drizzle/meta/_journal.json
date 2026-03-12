@@ -8,6 +8,13 @@
       "when": 1770141887326,
       "tag": "0000_slim_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773346837000,
+      "tag": "0001_free_switch",
+      "breakpoints": true
     }
   ]
 }

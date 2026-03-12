@@ -1,5 +1,6 @@
 import * as p from "@clack/prompts";
 import chalk from "chalk";
+import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { generateDockerCompose, type ComposeOptions } from "../templates/docker-compose.js";
@@ -121,6 +122,29 @@ export async function initCommand(options: { dir?: string }) {
           defaultValue: DEFAULT_SCREENSHOTS_PATH,
           placeholder: DEFAULT_SCREENSHOTS_PATH,
         }),
+
+      githubClientId: () =>
+        p.text({
+          message: "GitHub OAuth Client ID",
+          validate: (value) => {
+            if (!value) return "Client ID is required for authentication";
+          },
+        }),
+
+      githubClientSecret: () =>
+        p.password({
+          message: "GitHub OAuth Client Secret",
+          validate: (value) => {
+            if (!value) return "Client Secret is required for authentication";
+          },
+        }),
+
+      apiKey: () =>
+        p.text({
+          message: "API key for CI/CD uploads",
+          defaultValue: randomBytes(32).toString("hex"),
+          placeholder: "auto-generated",
+        }),
     },
     {
       onCancel: () => {
@@ -128,6 +152,24 @@ export async function initCommand(options: { dir?: string }) {
         process.exit(0);
       },
     }
+  );
+
+  const sessionSecret = randomBytes(32).toString("hex");
+
+  // Show GitHub OAuth App setup instruction
+  const callbackUrl = answers.domain
+    ? `https://${answers.domain}/auth/github/callback`
+    : `http://localhost:${parseInt(answers.port as string, 10) || DEFAULT_PORT}/auth/github/callback`;
+
+  p.note(
+    [
+      `Create a GitHub OAuth App at:`,
+      `  ${chalk.cyan("https://github.com/settings/developers")}`,
+      ``,
+      `Set the callback URL to:`,
+      `  ${chalk.cyan(callbackUrl)}`,
+    ].join("\n"),
+    "GitHub OAuth Setup"
   );
 
   const s = p.spinner();
@@ -162,6 +204,10 @@ export async function initCommand(options: { dir?: string }) {
     dbConnectionString: answers.dbConnectionString as string | undefined,
     dbPassword: (answers.dbPassword as string) || DEFAULT_DB_PASSWORD,
     screenshotsPath: (answers.screenshotsPath as string) || DEFAULT_SCREENSHOTS_PATH,
+    githubClientId: answers.githubClientId as string,
+    githubClientSecret: answers.githubClientSecret as string,
+    sessionSecret,
+    apiKey: answers.apiKey as string,
   };
 
   writeFileSync(resolve(outputDir, ".env"), generateEnv(envOptions));
@@ -180,23 +226,22 @@ export async function initCommand(options: { dir?: string }) {
   s.stop("Configuration files generated");
 
   // Summary
-  p.note(
-    [
-      `${chalk.dim("Directory:")}  ${outputDir}`,
-      `${chalk.dim("Files:")}      docker-compose.yml, .env${answers.includeNginx ? ", nginx.conf" : ""}`,
-      "",
-      `${chalk.dim("Next steps:")}`,
-      `  cd ${options.dir || DEFAULT_DIR}`,
-      "  argus-web start",
-    ].join("\n"),
-    "Setup complete"
-  );
+  const dir = options.dir || DEFAULT_DIR;
+  const nextSteps = [
+    `${chalk.dim("Directory:")}  ${outputDir}`,
+    `${chalk.dim("Files:")}      docker-compose.yml, .env${answers.includeNginx ? ", nginx.conf" : ""}`,
+    "",
+    `${chalk.dim("Next steps:")}`,
+    `  cd ${dir}`,
+  ];
+
+  nextSteps.push("  argus-web start");
 
   if (answers.https === "letsencrypt" && answers.domain) {
-    p.log.info(
-      `Run this to obtain your initial SSL certificate:\n  docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d ${answers.domain}`
-    );
+    nextSteps.push(`  argus-web setup-ssl ${answers.domain}`);
   }
+
+  p.note(nextSteps.join("\n"), "Setup complete");
 
   p.outro(chalk.green("Happy testing!"));
 }
