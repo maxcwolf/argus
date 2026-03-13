@@ -93,6 +93,7 @@ Options:
   --skip-upload      Don't upload results
   --base <branch>    Base branch for comparison (default: main)
   -t, --threshold    Difference threshold 0-1 (default: 0.01)
+  --portable         Embed images in HTML report (for CI artifacts)
 ```
 
 ### `argus init`
@@ -201,12 +202,27 @@ Then point your CLI at it by adding `apiUrl` and `apiKey` to your `.argus.json`:
 
 See the [@argus-vrt/web README](packages/web/README.md) for all CLI options and configuration.
 
+## CI Integration
+
+Argus works standalone in CI without a web dashboard. Use `--portable` to generate a self-contained HTML report:
+
+```yaml
+# GitHub Actions example
+- run: yarn argus test --skip-upload --portable
+- uses: actions/upload-artifact@v4
+  with:
+    name: visual-report
+    path: .visual-screenshots/**/report.html
+```
+
+See full workflow examples for [GitHub Actions](packages/cli/ci-templates/github-actions.yml) and [CircleCI](packages/cli/ci-templates/circleci.yml).
+
 ## How It Works
 
 1. **Capture** - Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
 2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images highlighting changed pixels
-3. **Upload** - Sends results to the web dashboard API, which stores metadata in PostgreSQL
-4. **Review** - Use the web dashboard to review changes with overlay view showing exactly where pixels differ
+3. **Report** - Generates a self-contained HTML report with side-by-side diffs, overlay view, and search
+4. **Upload** - Optionally sends results to the web dashboard API for persistent review
 
 ## Troubleshooting
 

@@ -1,0 +1,69 @@
+# Argus Visual Regression Tests — CircleCI
+#
+# Prerequisites:
+#   1. Baselines committed to .visual-baselines/ in the repo
+#   2. .argus.json configured in the project root
+#   3. React Native app with Storybook configured
+#   4. CircleCI macOS executor (required for iOS Simulator)
+#
+# This config runs on every PR, captures screenshots, compares against
+# baselines, and stores a self-contained HTML report as an artifact.
+#
+# Copy the relevant job into your .circleci/config.yml.
+
+version: 2.1
+
+orbs:
+  node: circleci/node@6.1
+
+jobs:
+  visual-tests:
+    macos:
+      xcode: "16.0"
+    resource_class: macos.m1.medium.gen1
+    environment:
+      SIMULATOR_DEVICE: iPhone 16 Pro
+    steps:
+      - checkout
+
+      - node/install:
+          node-version: "20"
+
+      - run:
+          name: Install dependencies
+          command: yarn install --immutable
+
+      - run:
+          name: Build app
+          command: yarn ios --simulator "$SIMULATOR_DEVICE"
+
+      # Run visual tests with --portable to embed images in the HTML report
+      - run:
+          name: Run visual tests
+          command: yarn argus test --skip-upload --portable
+          # Allow this step to "fail" (exit 1 = changes detected)
+          # so we can still upload the artifact
+          when: always
+
+      - store_artifacts:
+          path: .visual-screenshots
+          destination: visual-regression-report
+
+      # Optional: fail the build if changes were detected
+      - run:
+          name: Check for visual changes
+          command: |
+            RESULTS=$(find .visual-screenshots -name "comparison-results.json" -print -quit)
+            if [ -z "$RESULTS" ]; then
+              echo "No comparison results found"
+              exit 0
+            fi
+            CHANGED=$(node -e "const r = require('./' + process.argv[1]); process.exit(r.changedCount > 0 ? 1 : 0)" "$RESULTS")
+
+workflows:
+  test:
+    jobs:
+      - visual-tests:
+          filters:
+            branches:
+              ignore: main

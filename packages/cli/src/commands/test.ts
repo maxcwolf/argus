@@ -12,6 +12,7 @@ export interface TestOptions {
   skipCapture?: boolean
   skipUpload?: boolean
   threshold?: number
+  portable?: boolean
 }
 
 /**
@@ -54,6 +55,7 @@ export async function testCommand(options: TestOptions = {}): Promise<void> {
         current: branch,
         threshold: options.threshold,
         generateReport: true,
+        portable: options.portable,
       })
     } catch (error: any) {
       // Compare exits with code 1 if there are changes

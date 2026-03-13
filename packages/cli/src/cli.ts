@@ -29,6 +29,7 @@ program
   .option('--skip-capture', 'Skip screenshot capture (use existing)')
   .option('--skip-upload', 'Skip uploading results')
   .option('-t, --threshold <threshold>', 'Difference threshold (0-1)', parseFloat)
+  .option('--portable', 'Generate self-contained HTML report with embedded images (for CI artifacts)')
   .action(async (options) => {
     try {
       await testCommand(options)
@@ -104,6 +105,7 @@ program
   .option('--current <branch>', 'Current branch (default: current git branch)')
   .option('-t, --threshold <threshold>', 'Difference threshold (0-1)', parseFloat)
   .option('--no-report', 'Skip HTML report generation')
+  .option('--portable', 'Generate self-contained HTML report with embedded images (for CI artifacts)')
   .action(async (options) => {
     try {
       await compareCommand(options)

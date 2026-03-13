@@ -80,6 +80,7 @@ export interface VisualTestConfig {
   baselineDir: string
   screenshotDir: string
   apiUrl?: string
+  apiKey?: string
 }
 
 export type TestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PARTIAL'

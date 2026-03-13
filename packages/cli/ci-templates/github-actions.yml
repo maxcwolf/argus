@@ -1,0 +1,119 @@
+# Argus Visual Regression Tests — GitHub Actions
+#
+# Prerequisites:
+#   1. Baselines committed to .visual-baselines/ in the repo
+#   2. .argus.json configured in the project root
+#   3. React Native app with Storybook configured
+#
+# This workflow runs on every PR, captures screenshots on a macOS runner
+# (required for iOS Simulator), compares against baselines, and uploads
+# a self-contained HTML report as an artifact.
+#
+# Copy this file to .github/workflows/visual-tests.yml in your project.
+
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-tests:
+    name: Visual Regression
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build app
+        run: yarn ios --simulator "${{ env.SIMULATOR_DEVICE }}"
+        env:
+          SIMULATOR_DEVICE: iPhone 16 Pro
+
+      # Run visual tests with --portable to embed images in the HTML report
+      # --skip-upload since we're not using the web dashboard
+      - name: Run visual tests
+        id: visual-tests
+        continue-on-error: true
+        run: yarn argus test --skip-upload --portable
+
+      - name: Upload visual report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-report
+          path: .visual-screenshots/**/report.html
+          retention-days: 30
+
+      # Optional: post a summary comment on the PR
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const glob = require('glob');
+
+            // Find comparison results
+            const files = glob.sync('.visual-screenshots/**/comparison-results.json');
+            if (files.length === 0) return;
+
+            const results = JSON.parse(fs.readFileSync(files[0], 'utf-8'));
+            const { passedCount, changedCount, totalStories } = results;
+            const status = changedCount > 0 ? '⚠️' : '✅';
+
+            const body = [
+              `## ${status} Visual Regression Results`,
+              '',
+              `| Metric | Count |`,
+              `|--------|-------|`,
+              `| Total | ${totalStories} |`,
+              `| Passed | ${passedCount} |`,
+              `| Changed | ${changedCount} |`,
+              '',
+              changedCount > 0
+                ? '> Visual changes detected. Download the **visual-regression-report** artifact to review.'
+                : '> All screenshots match baselines.',
+            ].join('\n');
+
+            // Find existing bot comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Visual Regression Results')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail if changes detected
+        if: steps.visual-tests.outcome == 'failure'
+        run: |
+          echo "::error::Visual regression changes detected. Review the artifact report."
+          exit 1

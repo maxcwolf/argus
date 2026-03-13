@@ -100,11 +100,17 @@ export async function uploadCommand(options: UploadOptions = {}): Promise<void> 
     // Upload to API
     spinner.start(`Uploading to ${apiUrl}/api/upload...`)
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+
+    if (config.apiKey) {
+      headers['Authorization'] = `Bearer ${config.apiKey}`
+    }
+
     const response = await fetch(`${apiUrl}/api/upload`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(payload),
     })
 

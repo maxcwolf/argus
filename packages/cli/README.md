@@ -80,6 +80,7 @@ Options:
   --skip-capture               Skip screenshot capture, use existing screenshots
   --skip-upload                Skip uploading results to the web dashboard
   -t, --threshold <threshold>  Difference threshold 0-1 (default: 0.01)
+  --portable                   Embed images in HTML report (for CI artifacts)
 ```
 
 ### `argus init`
@@ -133,6 +134,7 @@ Options:
   --current <branch>           Current branch (default: current git branch)
   -t, --threshold <threshold>  Difference threshold 0-1 (default: 0.01)
   --no-report                  Skip HTML report generation
+  --portable                   Embed images in HTML report (for CI artifacts)
 ```
 
 ### `argus upload`
@@ -200,16 +202,52 @@ Configuration is stored in `.argus.json` in your project root. Run `argus init` 
 | `apiUrl` | No | Web dashboard URL for uploading results |
 | `apiKey` | No | API key for authenticating uploads to the dashboard |
 
+## CI Integration
+
+Argus works standalone in CI — no web dashboard required. Use `--portable` to generate a self-contained HTML report with embedded images that can be uploaded as a build artifact.
+
+### GitHub Actions
+
+```yaml
+- name: Run visual tests
+  continue-on-error: true
+  run: yarn argus test --skip-upload --portable
+
+- name: Upload visual report
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: visual-regression-report
+    path: .visual-screenshots/**/report.html
+```
+
+### CircleCI
+
+```yaml
+- run:
+    name: Run visual tests
+    command: yarn argus test --skip-upload --portable
+    when: always
+
+- store_artifacts:
+    path: .visual-screenshots
+    destination: visual-regression-report
+```
+
+> **Note:** Both require a macOS runner for the iOS Simulator. See full workflow examples in [`ci-templates/`](./ci-templates/).
+
+The portable report includes side-by-side comparison, diff overlay with opacity slider, search/filter, and dark mode — the same features as the web dashboard, in a single HTML file.
+
 ## Web Dashboard
 
-For a visual review interface with side-by-side diffs and overlay views, see [@argus-vrt/web](https://www.npmjs.com/package/@argus-vrt/web).
+For a persistent review interface with user authentication and a database, see [@argus-vrt/web](https://www.npmjs.com/package/@argus-vrt/web). The dashboard is optional — you can use Argus purely with CI artifacts.
 
 ## How It Works
 
 1. **Capture** - Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
 2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images highlighting changed pixels
-3. **Upload** - Sends results to the web dashboard API (optional)
-4. **Review** - Use the web dashboard to review changes with overlay, side-by-side, and diff views
+3. **Report** - Generates a self-contained HTML report with side-by-side diffs, overlay view, and search
+4. **Upload** - Optionally sends results to the web dashboard API
 
 ## License
 
