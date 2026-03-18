@@ -9,7 +9,7 @@ import { logger } from '../utils/logger'
 import { compareWithODiff, isODiffInstalled } from '../comparison/odiff'
 import { compareWithPixelmatch } from '../comparison/pixelmatch'
 import { calculateSSIM } from '../comparison/ssim'
-import { generateReport } from '../report/html'
+import { generateReport, writeReport } from '../report/html'
 
 export interface CompareOptions {
   base?: string
@@ -198,14 +198,27 @@ export async function compareCommand(options: CompareOptions = {}): Promise<void
     // Generate HTML report if requested
     if (options.generateReport !== false) {
       const portable = options.portable ?? false
+      const reportPath = join(currentDir, 'report.html')
       spinner.start(portable ? 'Generating portable HTML report (embedding images)...' : 'Generating HTML report...')
-      const html = await generateReport({
-        results,
-        branch: currentBranch,
-        baseBranch,
-        portable,
-      })
-      await writeFile(join(currentDir, 'report.html'), html)
+
+      if (portable) {
+        // Stream to disk to avoid V8 string length limits with many base64 images
+        await writeReport(reportPath, {
+          results,
+          branch: currentBranch,
+          baseBranch,
+          portable,
+        })
+      } else {
+        const html = await generateReport({
+          results,
+          branch: currentBranch,
+          baseBranch,
+          portable,
+        })
+        await writeFile(reportPath, html)
+      }
+
       spinner.succeed(portable ? 'Portable HTML report generated' : 'HTML report generated')
     }
 

@@ -1,5 +1,5 @@
-import { readFile } from 'fs/promises'
-import { existsSync } from 'fs'
+import { readFile, writeFile as fsWriteFile } from 'fs/promises'
+import { createWriteStream, existsSync } from 'fs'
 import { ComparisonResult } from '@argus-vrt/shared'
 
 /**
@@ -22,6 +22,10 @@ interface ReportOptions {
  * Generate a self-contained HTML report for visual regression test results.
  * When `portable` is true, all images are embedded as base64 data URIs
  * so the file can be shared, uploaded as a CI artifact, etc.
+ *
+ * Returns the HTML string for non-portable reports. For portable reports
+ * with many images, use `writeReport()` which streams to disk to avoid
+ * V8 string length limits.
  */
 export async function generateReport(options: ReportOptions): Promise<string> {
   const { results, branch, baseBranch, portable } = options
@@ -39,8 +43,64 @@ export async function generateReport(options: ReportOptions): Promise<string> {
     resultCards.push(buildResultCard(r, type, baseline, current, diff))
   }
 
-  const changedCards = resultCards.filter((_, i) => results[i].hasDiff)
-  const passedCards = resultCards.filter((_, i) => !results[i].hasDiff)
+  return buildHtml({ results, changedResults, passedResults, resultCards, branch, baseBranch })
+}
+
+/**
+ * Stream a portable HTML report directly to a file to avoid V8 string length
+ * limits when embedding many large base64 images.
+ */
+export async function writeReport(outputPath: string, options: ReportOptions): Promise<void> {
+  const { results, branch, baseBranch, portable } = options
+  const changedResults = results.filter((r) => r.hasDiff)
+  const passedResults = results.filter((r) => !r.hasDiff)
+
+  const stream = createWriteStream(outputPath, { encoding: 'utf-8' })
+
+  const write = (chunk: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (!stream.write(chunk)) {
+        stream.once('drain', resolve)
+      } else {
+        resolve()
+      }
+    })
+
+  // Write header
+  await write(buildHtmlHeader({ results, changedResults, passedResults, branch, baseBranch }))
+
+  // Write each result card individually to avoid building one massive string
+  for (const r of results) {
+    const type = r.hasDiff ? 'changed' : 'passed'
+    const baseline = portable ? await toDataUri(r.baselineUrl) : (r.baselineUrl ? `file://${r.baselineUrl}` : null)
+    const current = portable ? await toDataUri(r.currentUrl) : `file://${r.currentUrl}`
+    const diff = r.diffUrl ? (portable ? await toDataUri(r.diffUrl) : `file://${r.diffUrl}`) : null
+
+    await write(buildResultCard(r, type, baseline, current, diff))
+  }
+
+  // Write footer
+  await write(buildHtmlFooter())
+
+  // Close stream
+  await new Promise<void>((resolve, reject) => {
+    stream.end(() => resolve())
+    stream.on('error', reject)
+  })
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function buildHtmlHeader(opts: {
+  results: ComparisonResult[]
+  changedResults: ComparisonResult[]
+  passedResults: ComparisonResult[]
+  branch: string
+  baseBranch: string
+}): string {
+  const { results, changedResults, passedResults, branch, baseBranch } = opts
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -100,14 +160,12 @@ ${CSS}
     </div>
   </div>
 
-  <div id="changed-results" class="results active">
-    ${changedCards.length ? changedCards.join('\n') : '<div class="empty-state">No changed stories</div>'}
-  </div>
-  <div id="passed-results" class="results">
-    ${passedCards.length ? passedCards.join('\n') : '<div class="empty-state">No passed stories</div>'}
-  </div>
-  <div id="all-results" class="results">
-    ${resultCards.join('\n')}
+  <div id="results" class="results active">
+`
+}
+
+function buildHtmlFooter(): string {
+  return `
   </div>
 </div>
 <script>
@@ -117,8 +175,24 @@ ${JS}
 </html>`
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+/**
+ * Build the full HTML as a single string (for non-portable / small reports).
+ */
+function buildHtml(opts: {
+  results: ComparisonResult[]
+  changedResults: ComparisonResult[]
+  passedResults: ComparisonResult[]
+  resultCards: string[]
+  branch: string
+  baseBranch: string
+}): string {
+  const { results, changedResults, passedResults, resultCards, branch, baseBranch } = opts
+
+  const header = buildHtmlHeader({ results, changedResults, passedResults, branch, baseBranch })
+  const cards = resultCards.length ? resultCards.join('\n') : '<div class="empty-state">No stories found</div>'
+  const footer = buildHtmlFooter()
+
+  return header + cards + footer
 }
 
 function buildResultCard(
@@ -290,9 +364,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-s
 const JS = `
 function showTab(tab, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.results').forEach(r => r.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById(tab + '-results').classList.add('active');
+  const results = document.getElementById('results');
+  const cards = results.querySelectorAll('.result');
+  cards.forEach(r => {
+    if (tab === 'all') {
+      r.style.display = '';
+    } else {
+      r.style.display = r.classList.contains(tab) ? '' : 'none';
+    }
+  });
 }
 
 function toggleResult(header) {
@@ -347,7 +428,7 @@ function toggleTheme() {
     document.documentElement.classList.add('dark');
   }
   // Auto-expand changed results if few
-  const changed = document.querySelectorAll('#changed-results .result');
+  const changed = document.querySelectorAll('#results .result.changed');
   if (changed.length > 0 && changed.length <= 5) {
     changed.forEach(r => {
       const header = r.querySelector('.result-header');
