@@ -223,9 +223,9 @@ export async function compareCommand(options: CompareOptions = {}): Promise<void
 
     console.log('='.repeat(50))
 
-    // Exit with error if there are changes
+    // Signal changes detected (callers like test.ts will handle exit code)
     if (changedCount > 0) {
-      process.exit(1)
+      throw new Error(`${changedCount} visual changes detected`)
     }
   } catch (error) {
     spinner.fail('Comparison failed')

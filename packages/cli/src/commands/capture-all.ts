@@ -6,7 +6,7 @@ import { StoryScreenshot } from '@argus-vrt/shared'
 import { loadConfig, validateConfig } from '../utils/config'
 import { getCurrentBranch, getCurrentCommitHash } from '../utils/git'
 import { logger } from '../utils/logger'
-import { findSimulator, captureScreenshot } from '../ios/simulator'
+import { findSimulator, captureScreenshot, approveUrlScheme } from '../ios/simulator'
 import { getAllStories, generateStoryId } from '../storybook/parser'
 
 export interface CaptureAllOptions {
@@ -88,6 +88,9 @@ export async function captureAllCommand(options: CaptureAllOptions = {}): Promis
     // Capture delay (time to wait for story to render)
     const delay = options.delay ?? 1500
     const startDelay = options.startDelay ?? 3000
+
+    // Pre-approve URL scheme to suppress "Open in <App>?" dialog
+    await approveUrlScheme(simulator.udid, scheme)
 
     // Navigate to first story to ensure app is ready
     const firstStory = stories[0]

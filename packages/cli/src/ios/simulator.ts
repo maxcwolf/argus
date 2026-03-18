@@ -206,6 +206,28 @@ export async function captureScreenshot(udid: string, outputPath: string): Promi
 }
 
 /**
+ * Pre-approve a URL scheme on the simulator to suppress the
+ * "Open in <App>?" confirmation dialog that iOS shows for custom scheme deep links.
+ */
+export async function approveUrlScheme(udid: string, scheme: string): Promise<void> {
+  try {
+    logger.info(`Pre-approving URL scheme: ${scheme}`)
+    await execa('xcrun', [
+      'simctl', 'spawn', udid, 'defaults', 'write',
+      'com.apple.CoreSimulator.CoreSimulatorBridge',
+      'AllowURLSchemeOpenWithoutPrompt', '-bool', 'true',
+    ])
+    await execa('xcrun', [
+      'simctl', 'spawn', udid, 'defaults', 'write', '-g',
+      'LSURLSchemeApproved', '-dict-add', scheme, '-bool', 'true',
+    ])
+    logger.success('URL scheme pre-approved')
+  } catch (error) {
+    logger.warn(`Failed to pre-approve URL scheme (dialog may appear): ${error}`)
+  }
+}
+
+/**
  * Erase simulator data
  */
 export async function eraseSimulator(udid: string): Promise<void> {
