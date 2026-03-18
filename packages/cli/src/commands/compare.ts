@@ -50,8 +50,10 @@ export async function compareCommand(options: CompareOptions = {}): Promise<void
     const currentDir = join(process.cwd(), config.screenshotDir, currentBranch)
 
     // Check directories exist
-    if (!existsSync(baselineDir)) {
-      throw new Error(`Baseline directory not found: ${baselineDir}`)
+    const hasBaselines = existsSync(baselineDir)
+
+    if (!hasBaselines) {
+      logger.warn(`No baselines found at ${baselineDir} — all screenshots will be reported as new`)
     }
 
     if (!existsSync(currentDir)) {
@@ -69,7 +71,9 @@ export async function compareCommand(options: CompareOptions = {}): Promise<void
 
     // Get screenshot files
     const currentFiles = (await readdir(currentDir)).filter((f) => f.endsWith('.png') && f !== 'metadata.json')
-    const baselineFiles = (await readdir(baselineDir)).filter((f) => f.endsWith('.png'))
+    const baselineFiles = hasBaselines
+      ? (await readdir(baselineDir)).filter((f) => f.endsWith('.png'))
+      : []
 
     spinner.succeed(`Found ${currentFiles.length} current screenshots, ${baselineFiles.length} baselines`)
 
