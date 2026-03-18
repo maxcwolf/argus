@@ -2,7 +2,7 @@
 
 **Visual Regression Testing for React Native**
 
-Capture screenshots from iOS Simulators for all your Storybook stories, compare them against baselines, and review changes in a web dashboard.
+Capture screenshots from iOS Simulators for all your Storybook stories, compare them against baselines, and review changes in a portable HTML report or a self-hosted web dashboard.
 
 ## Prerequisites
 
@@ -27,14 +27,14 @@ npm install -D @argus-vrt/cli
 yarn argus init
 ```
 
-This will auto-detect your Storybook config, find available iOS simulators, and create `.argus.json` with sensible defaults.
+Auto-detects your Storybook config, finds available iOS simulators, and creates `.argus.json` with sensible defaults.
 
 ### 2. Add scripts to `package.json`
 
 ```json
 {
   "scripts": {
-    "visual:test": "argus test",
+    "visual:test": "argus test --skip-upload --portable",
     "visual:baseline": "argus baseline --update"
   }
 }
@@ -47,19 +47,30 @@ This will auto-detect your Storybook config, find available iOS simulators, and 
 yarn ios
 
 # Capture screenshots and set baselines
-yarn visual:test --skip-upload
+yarn visual:test
 yarn visual:baseline
 
-# Commit your baselines
+# Commit your baselines (screenshots are ephemeral)
 git add .visual-baselines
 git commit -m "chore: add visual baselines"
 ```
 
-### 4. Run visual tests
+### 4. Set up `.gitignore`
+
+Add this to your `.gitignore` — baselines are committed, screenshots are regenerated each run:
+
+```gitignore
+.visual-screenshots/
+```
+
+### 5. Run visual tests
 
 ```bash
-# After making UI changes
+# After making UI changes — generates report.html
 yarn visual:test
+
+# Open the report to review changes
+open .visual-screenshots/$(git branch --show-current)/report.html
 
 # If changes are intentional, update baselines
 yarn visual:baseline
@@ -69,7 +80,7 @@ yarn visual:baseline
 
 ### `argus test`
 
-Run a complete visual test cycle: capture screenshots, compare against baselines, and upload results.
+Run a complete visual test cycle: capture screenshots, compare against baselines, and generate a report.
 
 ```
 argus test [options]
@@ -81,6 +92,16 @@ Options:
   --skip-upload                Skip uploading results to the web dashboard
   -t, --threshold <threshold>  Difference threshold 0-1 (default: 0.01)
   --portable                   Embed images in HTML report (for CI artifacts)
+```
+
+**Typical usage:**
+
+```bash
+# Local development (file:// image URLs, opens in browser)
+yarn argus test --skip-upload
+
+# CI (self-contained HTML with embedded images)
+yarn argus test --skip-upload --portable
 ```
 
 ### `argus init`
@@ -96,7 +117,7 @@ Options:
 
 ### `argus baseline`
 
-Manage visual baselines.
+Manage visual baselines. Baselines are the "expected" screenshots that live in your repo.
 
 ```
 argus baseline [options]
@@ -107,9 +128,14 @@ Options:
   -b, --branch <branch>  Branch to use for screenshots (default: current)
 ```
 
+**When to update baselines:**
+- After making intentional UI changes
+- After reviewing the HTML report and confirming the changes look correct
+- Then commit the updated baselines so CI passes on the next run
+
 ### `argus capture-all`
 
-Capture screenshots of all Storybook stories.
+Capture screenshots of all Storybook stories (without comparing).
 
 ```
 argus capture-all [options]
@@ -124,7 +150,7 @@ Options:
 
 ### `argus compare`
 
-Compare current screenshots against baselines.
+Compare current screenshots against baselines (without capturing).
 
 ```
 argus compare [options]
@@ -139,7 +165,7 @@ Options:
 
 ### `argus upload`
 
-Upload comparison results to the web dashboard. Requires an API key if the dashboard has `ARGUS_API_KEY` configured (set during `npx @argus-vrt/web init`).
+Upload comparison results to the web dashboard. Only needed if you're running [`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web). Requires an API key if the dashboard has `ARGUS_API_KEY` configured.
 
 ```
 argus upload [options]
@@ -182,8 +208,7 @@ Configuration is stored in `.argus.json` in your project root. Run `argus init` 
     "includeMetrics": true
   },
   "baselineDir": ".visual-baselines",
-  "screenshotDir": ".visual-screenshots",
-  "apiUrl": "http://localhost:3000"
+  "screenshotDir": ".visual-screenshots"
 }
 ```
 
@@ -199,12 +224,12 @@ Configuration is stored in `.argus.json` in your project root. Run `argus init` 
 | `comparison.threshold` | No | Pixel diff threshold 0-1 (default: `0.01`) |
 | `baselineDir` | No | Directory for baseline images (default: `.visual-baselines`) |
 | `screenshotDir` | No | Directory for screenshots (default: `.visual-screenshots`) |
-| `apiUrl` | No | Web dashboard URL for uploading results |
+| `apiUrl` | No | Web dashboard URL — only needed if using `@argus-vrt/web` |
 | `apiKey` | No | API key for authenticating uploads to the dashboard |
 
 ## CI Integration
 
-Argus works standalone in CI — no web dashboard required. Use `--portable` to generate a self-contained HTML report with embedded images that can be uploaded as a build artifact.
+Argus works standalone in CI — no web dashboard or database required. Use `--portable` to generate a self-contained HTML report with embedded images that can be uploaded as a build artifact.
 
 ### GitHub Actions
 
@@ -219,6 +244,7 @@ Argus works standalone in CI — no web dashboard required. Use `--portable` to 
   with:
     name: visual-regression-report
     path: .visual-screenshots/**/report.html
+    retention-days: 30
 ```
 
 ### CircleCI
@@ -234,20 +260,51 @@ Argus works standalone in CI — no web dashboard required. Use `--portable` to 
     destination: visual-regression-report
 ```
 
-> **Note:** Both require a macOS runner for the iOS Simulator. See full workflow examples in [`ci-templates/`](./ci-templates/).
+> **Important:** Both require a **macOS runner** for the iOS Simulator (`runs-on: macos-latest` for GHA, `macos` executor for CircleCI).
 
-The portable report includes side-by-side comparison, diff overlay with opacity slider, search/filter, and dark mode — the same features as the web dashboard, in a single HTML file.
+See complete workflow files with PR comments and build failure handling in [`ci-templates/`](./ci-templates/).
 
-## Web Dashboard
+### What the portable report includes
 
-For a persistent review interface with user authentication and a database, see [@argus-vrt/web](https://www.npmjs.com/package/@argus-vrt/web). The dashboard is optional — you can use Argus purely with CI artifacts.
+The `--portable` flag generates a single HTML file with all images embedded as base64. The report features:
+
+- **Side-by-side** — baseline vs current comparison
+- **Diff overlay** — current screenshot with diff highlighted, adjustable opacity slider
+- **Diff-only** — just the difference image
+- **Current-only** — latest screenshot in isolation
+- **Search/filter** — find stories by name
+- **Dark mode** — toggleable, respects system preference
+- **Auto-expand** — changed stories are expanded by default so you see diffs immediately
+
+### CI workflow overview
+
+1. Developer opens a PR with UI changes
+2. CI captures screenshots on a macOS runner
+3. Argus compares against baselines committed in the repo
+4. Portable HTML report is uploaded as a build artifact
+5. (Optional) A PR comment summarizes pass/fail counts — see the [full GHA template](./ci-templates/github-actions.yml)
+6. Reviewer downloads the report, reviews diffs in the browser
+7. If changes are intentional: `yarn visual:baseline && git add .visual-baselines && git commit`
+
+## Web Dashboard (Optional)
+
+For teams that want a persistent review interface with GitHub OAuth authentication, user history, and approval workflows, see [`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web). The dashboard is fully optional — you can use Argus purely with CLI + CI artifacts.
+
+To use the dashboard, add `apiUrl` and `apiKey` to your `.argus.json`:
+
+```json
+{
+  "apiUrl": "https://argus.yourcompany.com",
+  "apiKey": "your-api-key-from-init"
+}
+```
 
 ## How It Works
 
-1. **Capture** - Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
-2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images highlighting changed pixels
-3. **Report** - Generates a self-contained HTML report with side-by-side diffs, overlay view, and search
-4. **Upload** - Optionally sends results to the web dashboard API
+1. **Capture** — Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
+2. **Compare** — Compares current screenshots against baselines using Pixelmatch, generates diff images with pixel-level precision
+3. **Report** — Generates a self-contained HTML report with side-by-side diffs, overlay view, search, and dark mode
+4. **Upload** — Optionally sends results to the web dashboard for persistent review and approval workflows
 
 ## License
 

@@ -5,17 +5,17 @@
     <img alt="Argus" src="assets/banner-light.svg" width="640">
   </picture>
   <br><br>
-  Capture screenshots from iOS Simulators for all your Storybook stories,<br>compare them against baselines, and review changes in a self-hosted web dashboard.
+  Capture screenshots from iOS Simulators for all your Storybook stories,<br>compare them against baselines, and review changes — in CI or a self-hosted dashboard.
 </p>
 
 ## Features
 
 - **Automated Screenshot Capture** - Captures screenshots from iOS Simulators for all Storybook stories
 - **Fast Image Comparison** - Uses Pixelmatch with configurable thresholds and SSIM scoring
-- **Web Dashboard** - Review visual changes with side-by-side, diff, overlay, and current-only views
-- **Story Browser** - Flat list, tree (by component), and grouped (by directory) view modes
-- **Git Integration** - Branch-based screenshot management
-- **CI/CD Ready** - Upload results to the web dashboard from your CI pipeline
+- **Portable HTML Reports** - Self-contained HTML report with side-by-side, overlay, diff, and search — works as a CI artifact with no server required
+- **Web Dashboard** (optional) - Self-hosted review interface with GitHub OAuth, persistent history, and approval workflows
+- **Git Integration** - Branch-based screenshot management with baselines committed to your repo
+- **CI/CD Ready** - Works out of the box with GitHub Actions and CircleCI (macOS runners)
 
 ## Prerequisites
 
@@ -27,28 +27,27 @@
 ## Installation
 
 ```bash
-npm install -D @argus-vrt/cli
-# or
 yarn add -D @argus-vrt/cli
+# or
+npm install -D @argus-vrt/cli
 ```
 
 ## Quick Start
 
-### 1. Install and initialize
+### 1. Initialize
 
 ```bash
-yarn add -D @argus-vrt/cli
 yarn argus init
 ```
 
-This will auto-detect your Storybook configuration, find available iOS simulators, and create `.argus.json` with sensible defaults.
+Auto-detects your Storybook configuration, finds available iOS simulators, and creates `.argus.json`.
 
 ### 2. Add scripts to `package.json`
 
 ```json
 {
   "scripts": {
-    "visual:test": "argus test",
+    "visual:test": "argus test --skip-upload --portable",
     "visual:baseline": "argus baseline --update"
   }
 }
@@ -61,7 +60,7 @@ This will auto-detect your Storybook configuration, find available iOS simulator
 yarn ios
 
 # Capture screenshots and set baselines
-yarn visual:test --skip-upload
+yarn visual:test
 yarn visual:baseline
 
 # Commit your baselines
@@ -69,160 +68,148 @@ git add .visual-baselines
 git commit -m "chore: add visual baselines"
 ```
 
-### 4. Run visual tests
+### 4. Set up `.gitignore`
+
+```gitignore
+# Argus — screenshots are ephemeral, baselines are committed
+.visual-screenshots/
+```
+
+### 5. Run visual tests
 
 ```bash
-# After making UI changes
+# After making UI changes — generates report.html
 yarn visual:test
+
+# Open the report to review changes
+open .visual-screenshots/$(git branch --show-current)/report.html
 
 # If changes are intentional, update baselines
 yarn visual:baseline
 ```
 
+## CI Integration
+
+Argus works standalone in CI — no web dashboard or database needed. Use `--portable` to generate a self-contained HTML report with embedded images, then upload it as a build artifact.
+
+### GitHub Actions
+
+```yaml
+- name: Run visual tests
+  continue-on-error: true
+  run: yarn argus test --skip-upload --portable
+
+- name: Upload visual report
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: visual-regression-report
+    path: .visual-screenshots/**/report.html
+    retention-days: 30
+```
+
+### CircleCI
+
+```yaml
+- run:
+    name: Run visual tests
+    command: yarn argus test --skip-upload --portable
+    when: always
+
+- store_artifacts:
+    path: .visual-screenshots
+    destination: visual-regression-report
+```
+
+> **Note:** Both require a **macOS runner** for the iOS Simulator. See complete workflow files in [`packages/cli/ci-templates/`](packages/cli/ci-templates/).
+
+The portable report includes:
+- **Side-by-side** baseline vs current comparison
+- **Diff overlay** with adjustable opacity slider
+- **Diff-only** and **current-only** views
+- **Search/filter** across all stories
+- **Dark mode** with system preference detection
+- Auto-expands changed stories so you see what matters first
+
+### What the CI flow looks like
+
+1. PR is opened with UI changes
+2. CI runner captures screenshots on macOS
+3. Argus compares against baselines committed in the repo
+4. HTML report is uploaded as a build artifact
+5. Optionally, a PR comment summarizes the results (see [full GHA template](packages/cli/ci-templates/github-actions.yml))
+6. Reviewer downloads the report, reviews diffs, and approves or requests baseline updates
+
+See the **[full CI integration guide](packages/cli/README.md#ci-integration)** in the CLI README for details on what the report includes, the full workflow, and how to update baselines after review.
+
 ## CLI Commands
 
-### `argus test`
+| Command | Description |
+|---------|-------------|
+| `argus test` | Full cycle: capture → compare → report. Add `--portable` for CI. |
+| `argus init` | Interactive setup wizard — creates `.argus.json` |
+| `argus baseline --update` | Update baselines from current screenshots |
+| `argus compare` | Compare without capturing. Add `--portable` for CI. |
+| `argus capture-all` | Capture without comparing |
+| `argus upload` | Upload results to the web dashboard (optional) |
+| `argus list-stories` | List all detected Storybook stories |
 
-Run a complete visual test cycle: capture, compare, and upload (if configured).
-
-```
-argus test [options]
-
-Options:
-  --skip-capture     Use existing screenshots
-  --skip-upload      Don't upload results
-  --base <branch>    Base branch for comparison (default: main)
-  -t, --threshold    Difference threshold 0-1 (default: 0.01)
-  --portable         Embed images in HTML report (for CI artifacts)
-```
-
-### `argus init`
-
-Interactive setup wizard that auto-detects your project configuration.
-
-```
-argus init [--force]
-```
-
-### `argus baseline`
-
-Manage visual baselines.
-
-```
-argus baseline [options]
-
-Options:
-  --update    Update baselines from current screenshots
-  --clear     Remove all baselines
-```
-
-### `argus capture-all`
-
-Capture screenshots of all Storybook stories.
-
-```
-argus capture-all [options]
-
-Options:
-  -b, --branch <branch>    Override current git branch
-  -f, --filter <pattern>   Filter stories by regex
-  --skip-shutdown          Keep simulator running
-```
-
-### `argus compare`
-
-Compare screenshots against baselines.
-
-```
-argus compare [options]
-
-Options:
-  --base <branch>          Base branch (default: main)
-  -t, --threshold <value>  Difference threshold 0-1
-  --no-report              Skip HTML report
-```
-
-### `argus upload`
-
-Upload results to the web dashboard. Requires an API key if the dashboard has authentication configured.
-
-```
-argus upload [--api-url <url>]
-```
-
-See the full command reference with all options in the [@argus-vrt/cli README](packages/cli/README.md).
+See the **[full command reference](packages/cli/README.md#commands)** with all options and flags in the CLI README.
 
 ## Configuration
 
 Configuration is stored in `.argus.json` in your project root. Run `argus init` to generate it.
 
-| Field | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `storybook.port` | Yes | - | Storybook WebSocket port |
-| `storybook.scheme` | Yes | - | iOS URL scheme for deep linking |
-| `simulator.device` | Yes | - | Exact simulator device name |
-| `simulator.bundleId` | Yes | - | App bundle identifier |
-| `comparison.threshold` | No | `0.01` | Pixel diff threshold (0-1) |
-| `baselineDir` | No | `.visual-baselines` | Directory for baseline images |
-| `screenshotDir` | No | `.visual-screenshots` | Directory for screenshots |
-| `apiUrl` | No | - | Web dashboard URL for uploads |
-| `apiKey` | No | - | API key for authenticating uploads |
+```json
+{
+  "storybook": {
+    "port": 7007,
+    "scheme": "myapp"
+  },
+  "simulator": {
+    "device": "iPhone 16 Pro",
+    "os": "18.2",
+    "bundleId": "com.myapp"
+  },
+  "comparison": {
+    "threshold": 0.01
+  },
+  "baselineDir": ".visual-baselines",
+  "screenshotDir": ".visual-screenshots"
+}
+```
 
-## Web Dashboard
+See the **[full configuration reference](packages/cli/README.md#configuration)** with all fields in the CLI README.
 
-Argus includes a self-hosted web dashboard ([`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web)) for reviewing visual diffs — similar to Chromatic, but self-hosted. It provides side-by-side diffs, overlay views with adjustable opacity, story browsing, search, and dark mode.
+## Web Dashboard (Optional)
+
+For teams that want a persistent review interface with authentication and history, Argus includes a self-hosted web dashboard ([`@argus-vrt/web`](https://www.npmjs.com/package/@argus-vrt/web)). It's fully optional — you can use Argus purely with CLI + CI artifacts.
 
 The dashboard requires **GitHub OAuth** for authentication. Create a [GitHub OAuth App](https://github.com/settings/developers) before running `init`.
 
-Deploy the dashboard with a single command:
-
 ```bash
-# Interactive setup wizard — generates docker-compose.yml, .env, nginx.conf
-npx @argus-vrt/web init
-
-# Start the dashboard
-npx @argus-vrt/web start
-
-# Manage your deployment
-npx @argus-vrt/web stop        # Stop containers
-npx @argus-vrt/web logs        # Stream logs
-npx @argus-vrt/web status      # Health check
-npx @argus-vrt/web upgrade     # Pull latest image + restart
+npx @argus-vrt/web init     # Interactive setup wizard
+npx @argus-vrt/web start    # Start containers
 npx @argus-vrt/web setup-ssl <domain>  # Let's Encrypt certificate
 ```
 
-Then point your CLI at it by adding `apiUrl` and `apiKey` to your `.argus.json`:
+Then point the CLI at it:
 
 ```json
 {
-  "apiUrl": "http://localhost:3000",
+  "apiUrl": "https://argus.yourcompany.com",
   "apiKey": "your-api-key-from-init"
 }
 ```
 
-See the [@argus-vrt/web README](packages/web/README.md) for all CLI options and configuration.
-
-## CI Integration
-
-Argus works standalone in CI without a web dashboard. Use `--portable` to generate a self-contained HTML report:
-
-```yaml
-# GitHub Actions example
-- run: yarn argus test --skip-upload --portable
-- uses: actions/upload-artifact@v4
-  with:
-    name: visual-report
-    path: .visual-screenshots/**/report.html
-```
-
-See full workflow examples for [GitHub Actions](packages/cli/ci-templates/github-actions.yml) and [CircleCI](packages/cli/ci-templates/circleci.yml).
+See the [@argus-vrt/web README](packages/web/README.md) for full setup and deployment instructions.
 
 ## How It Works
 
-1. **Capture** - Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
-2. **Compare** - Compares current screenshots against baselines using Pixelmatch, generates diff images highlighting changed pixels
-3. **Report** - Generates a self-contained HTML report with side-by-side diffs, overlay view, and search
-4. **Upload** - Optionally sends results to the web dashboard API for persistent review
+1. **Capture** — Boots iOS simulator, launches your app with Storybook, navigates to each story via deep links, and captures screenshots
+2. **Compare** — Compares current screenshots against baselines using Pixelmatch, generates diff images with pixel-level precision
+3. **Report** — Generates a self-contained HTML report with side-by-side diffs, overlay view, search, and dark mode
+4. **Upload** — Optionally sends results to the web dashboard for persistent review and approval workflows
 
 ## Troubleshooting
 
@@ -259,6 +246,7 @@ Ensure the web app server is running and can access the screenshot directories. 
 argus/
 ├── packages/
 │   ├── cli/           # CLI tool (published as @argus-vrt/cli)
+│   │   └── ci-templates/  # Example CI workflow files
 │   ├── web/           # Web dashboard (published as @argus-vrt/web)
 │   └── shared/        # Shared types/constants (internal, bundled into CLI via tsup)
 └── package.json       # Yarn 4 workspaces + Turborepo
