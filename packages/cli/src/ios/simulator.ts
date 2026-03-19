@@ -208,14 +208,16 @@ export async function captureScreenshot(udid: string, outputPath: string): Promi
 /**
  * Pre-approve a URL scheme on the simulator to suppress the
  * "Open in <App>?" confirmation dialog that iOS shows for custom scheme deep links.
- * Uses multiple strategies: defaults write, then if needed, opens the URL and
- * programmatically dismisses the dialog so subsequent opens are pre-approved.
+ *
+ * Opens the Simulator GUI app (required for keystroke forwarding), triggers the
+ * dialog with a dummy openurl, then dismisses it via AppleScript. The approval
+ * persists for the simulator session so all subsequent openurl calls skip the dialog.
  */
-export async function approveUrlScheme(udid: string, scheme: string, bundleId?: string): Promise<void> {
+export async function approveUrlScheme(udid: string, scheme: string): Promise<void> {
   try {
     logger.info(`Pre-approving URL scheme: ${scheme}`)
 
-    // Strategy 1: Write simulator preferences (works on some Xcode/iOS versions)
+    // Write simulator preferences (works on some Xcode/iOS versions)
     await execa('xcrun', [
       'simctl', 'spawn', udid, 'defaults', 'write',
       'com.apple.CoreSimulator.CoreSimulatorBridge',
@@ -226,25 +228,30 @@ export async function approveUrlScheme(udid: string, scheme: string, bundleId?: 
       'LSURLSchemeApproved', '-dict-add', scheme, '-bool', 'true',
     ]).catch(() => {})
 
-    // Strategy 2: Open a URL to trigger the dialog, then dismiss it via keyboard.
-    // The approval persists for the simulator session, so subsequent openurl
-    // calls for this scheme will not show the dialog.
-    logger.info('Opening URL to trigger and dismiss approval dialog...')
-    await execa('xcrun', ['simctl', 'openurl', udid, `${scheme}://argus-approve`])
+    // Ensure Simulator.app is running — `simctl boot` only starts the runtime,
+    // not the GUI app. Without the GUI, AppleScript can't forward keystrokes
+    // to the simulated iOS to dismiss the dialog.
+    logger.info('Ensuring Simulator.app is running...')
+    await execa('open', ['-a', 'Simulator']).catch(() => {})
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Give the dialog time to appear
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // Open a dummy URL to trigger the "Open in <App>?" dialog
+    logger.info('Triggering URL scheme approval dialog...')
+    await execa('xcrun', ['simctl', 'openurl', udid, `${scheme}://argus-approve`])
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     // Dismiss the dialog by sending Return key via AppleScript.
+    // Simulator.app forwards keystrokes to the simulated iOS.
     // "Open" is the default button, so Return activates it.
+    logger.info('Dismissing dialog via keystroke...')
     await execa('osascript', [
       '-e', 'tell application "Simulator" to activate',
-      '-e', 'delay 0.5',
+      '-e', 'delay 1',
       '-e', 'tell application "System Events" to keystroke return',
     ])
 
-    // Wait for dialog to dismiss and app to handle the URL
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    // Wait for dialog to dismiss and app to settle
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     logger.success('URL scheme pre-approved')
   } catch (error) {

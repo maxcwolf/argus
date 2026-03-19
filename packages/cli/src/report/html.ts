@@ -344,11 +344,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-s
 .opacity-value { width: 32px; text-align: right; }
 .image-panel { display: none; }
 .image-panel.active { display: block; }
-.side-by-side-view { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.side-by-side-view.active { display: grid; }
+.side-by-side-view { grid-template-columns: 1fr 1fr; gap: 16px; }
 .image-col { display: flex; flex-direction: column; align-items: center; }
 .image-col.full { width: 100%; }
 .image-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
-.image-col img { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 6px; background: repeating-conic-gradient(var(--border) 0% 25%, transparent 0% 50%) 50%/16px 16px; }
+.image-col img { max-width: 100%; max-height: 70vh; width: auto; height: auto; object-fit: contain; border: 1px solid var(--border); border-radius: 6px; background: repeating-conic-gradient(var(--border) 0% 25%, transparent 0% 50%) 50%/16px 16px; }
 .no-image { border: 1px dashed var(--border); border-radius: 6px; padding: 48px 24px; text-align: center; color: var(--text-dim); font-size: 13px; }
 .overlay-container { position: relative; }
 .overlay-container .overlay-base { display: block; max-width: 100%; }
