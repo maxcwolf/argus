@@ -1,6 +1,6 @@
 {
   "name": "@argus-vrt/cli",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Argus CLI - Visual Regression Testing for React Native",
   "license": "MIT",
   "main": "./dist/index.js",
